@@ -1,0 +1,6 @@
+{
+  "name": "EduPulse - Academic Performance & Monitoring Platform",
+  "description": "Centralized academic management, dynamic QR attendance tracking, manual attendance roster, and early warning risk monitoring for Metropolitan University.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
