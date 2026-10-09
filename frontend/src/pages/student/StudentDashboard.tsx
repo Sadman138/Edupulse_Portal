@@ -1,265 +1,256 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/common/StatCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import {
-  GPA_TREND_DATA,
-  ATTENDANCE_TREND_DATA,
-  RECENT_ACTIVITIES
-} from '../../data/mockData';
-import { useApp } from '../../context/AppContext';
-import { ClassRoutineTracker } from '../../components/common/ClassRoutineTracker';
-import { Calendar, Clock, MapPin, X, Sparkles, Building2, ChevronRight } from 'lucide-react';
-import { ThemeColor } from '../../theme/epTheme';
+  GraduationCap,
+  Award,
+  CalendarCheck,
+  BookOpen,
+  AlertOctagon,
+  ArrowRight,
+  TrendingUp,
+  FileCheck2,
+  PhoneCall,
+  UserCheck,
+  QrCode
+} from 'lucide-react';
 
-interface StudentDashboardProps {
-  onNavigate?: (path: string) => void;
-  isDarkMode?: boolean;
-  themeColor?: ThemeColor;
-}
+export const StudentDashboard: React.FC = () => {
+  const { currentUser, studentCourses, setActiveTab, setPdfModalDoc } = useApp();
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({
-  onNavigate,
-  isDarkMode: propIsDarkMode,
-  themeColor = 'cyan'
-}) => {
-  const { student, evaluations, activeQRSession, currentUser, isDarkMode: contextIsDarkMode } = useApp();
-  const isDarkMode = propIsDarkMode !== undefined ? propIsDarkMode : contextIsDarkMode;
-  const [showFullRoutineModal, setShowFullRoutineModal] = useState(false);
-
-  const studentEvals = evaluations.filter((e) => e.studentId === student.id);
-  const criticalCourse = studentEvals.find((e) => e.riskLevel === 'CRITICAL');
-
-  const cardStyle = isDarkMode
-    ? 'bg-[#101726] border-[#1d273a] shadow-lg backdrop-blur-xl text-slate-100'
-    : 'bg-white border-slate-200/90 shadow-xs text-slate-900';
-
-  const rowTextStyle = isDarkMode ? 'text-slate-200 font-bold' : 'text-slate-900 font-extrabold';
-  const tableHeadStyle = isDarkMode
-    ? 'bg-[#0a0f1d] text-slate-400 border-b border-[#1b2538]'
-    : 'bg-slate-100 text-slate-800 border-b border-slate-200 font-extrabold';
+  const totalCredits = studentCourses.reduce((sum, c) => sum + c.credits, 0);
+  const criticalCourses = studentCourses.filter(c => c.riskLevel === 'CRITICAL');
+  const warningCourses = studentCourses.filter(c => c.riskLevel === 'WARNING');
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Top 5 Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="space-y-6">
+      {/* Student Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-purple-950/60 border border-indigo-500/20 p-6 sm:p-8 backdrop-blur-xl">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Metropolitan University • Department of CSE</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Welcome back, {currentUser.name}! 🎓
+            </h1>
+            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Student ID: <strong className="text-indigo-300">{currentUser.studentId}</strong> • Batch: <strong className="text-indigo-300">{currentUser.batch}</strong> • Current Session: <strong className="text-indigo-300">{currentUser.currentSemester}</strong>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setActiveTab('qr-scanner')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Scan QR Attendance</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('academic-performance')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all"
+            >
+              <span>View Full Analytics</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Week 3 Core Syllabus: DYNAMIC RED ALERT BANNER */}
+      {criticalCourses.length > 0 && (
+        <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 backdrop-blur-md animate-pulse">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">
+                <AlertOctagon className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-rose-300 text-sm tracking-wide uppercase">
+                    Early Warning Red Alert Triggered!
+                  </h3>
+                  <span className="text-[10px] bg-rose-500 text-white font-black px-2 py-0.5 rounded-full">
+                    {criticalCourses.length} COURSE AT CRITICAL RISK
+                  </span>
+                </div>
+                <p className="text-xs text-rose-200/90 leading-relaxed">
+                  Your attendance or continuous assessment in{' '}
+                  <strong className="underline text-white font-bold">
+                    {criticalCourses.map(c => `${c.courseCode} (${c.attendancePercentage}%)`).join(', ')}
+                  </strong>{' '}
+                  has fallen below the mandatory 75% university eligibility requirement.
+                </p>
+                <p className="text-[11px] text-rose-300 font-medium">
+                  Recommendation: Schedule an immediate counseling meeting with your Course Teacher or Departmental Advisor to arrange recovery quizzes/makeup classes.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() =>
+                  setPdfModalDoc({
+                    title: 'Academic Debarment Warning Notice - CSE 313',
+                    category: 'OFFICIAL WARNING',
+                    content: `STUDENT WARNING & COUNSELING SLIP\n\nStudent: ${currentUser.name} (ID: ${currentUser.studentId})\nCourse: CSE 313 Compiler Design\nInstructor: Asst. Prof. Mahfuzur Rahman\nCurrent Attendance: 68.0% (Threshold: 75.0%)\nStatus: Debarment Risk\n\nYou are instructed to meet with your course teacher during office hours within 3 working days.`
+                  })
+                }
+                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md transition-colors whitespace-nowrap"
+              >
+                View Notice Slip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top 5 KPI Metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
         <StatCard
           title="Current SGPA"
-          value={student.currentSgpa.toFixed(2)}
-          subtitle={`Target: ${student.targetSgpa.toFixed(2)}`}
-          icon="grade"
-          isDarkMode={isDarkMode}
+          value="3.56"
+          subtitle="Spring 2026 Estimate"
+          icon={TrendingUp}
+          trend="+0.14"
+          trendPositive={true}
+          colorScheme="purple"
         />
         <StatCard
-          title="Overall CGPA"
-          value={student.cgpa.toFixed(2)}
-          subtitle="Semester 1-5 Verified"
-          icon="school"
-          isDarkMode={isDarkMode}
+          title="Cumulative CGPA"
+          value={currentUser.cgpa || 3.42}
+          subtitle="Out of 4.00 Scale"
+          icon={Award}
+          trend="Upper 2nd Class"
+          trendPositive={true}
+          colorScheme="indigo"
         />
         <StatCard
-          title="Attendance"
-          value={`${student.overallAttendance}%`}
-          subtitle="Min Required: 75%"
-          icon="fact_check"
-          isDarkMode={isDarkMode}
+          title="Overall Attendance"
+          value={`${currentUser.overallAttendance || 84.5}%`}
+          subtitle="Threshold: 75.0%"
+          icon={CalendarCheck}
+          trend={currentUser.overallAttendance && currentUser.overallAttendance >= 75 ? 'ELIGIBLE' : 'AT RISK'}
+          trendPositive={(currentUser.overallAttendance || 0) >= 75}
+          colorScheme={(currentUser.overallAttendance || 0) >= 75 ? 'emerald' : 'rose'}
         />
         <StatCard
-          title="Current Semester"
-          value={student.currentSemester}
-          subtitle={student.academicYear}
-          icon="calendar_today"
-          isDarkMode={isDarkMode}
+          title="Enrolled Credits"
+          value={`${totalCredits} Cr`}
+          subtitle="5 Enrolled Courses"
+          icon={BookOpen}
+          colorScheme="cyan"
         />
         <StatCard
-          title="Total Credits"
-          value={student.totalCredits}
-          subtitle="Completed"
-          icon="verified"
-          isDarkMode={isDarkMode}
+          title="Risk Category"
+          value={criticalCourses.length > 0 ? 'CRITICAL' : warningCourses.length > 0 ? 'WARNING' : 'SAFE'}
+          subtitle={`${criticalCourses.length} Critical • ${warningCourses.length} Warning`}
+          icon={AlertOctagon}
+          colorScheme={criticalCourses.length > 0 ? 'rose' : warningCourses.length > 0 ? 'amber' : 'emerald'}
         />
       </div>
 
-      {/* Dynamic Academic Risk Alert Banner */}
-      {criticalCourse && (
-        <div
-          className={`p-4 rounded-2xl border shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${
-            isDarkMode
-              ? 'bg-rose-950/60 border-rose-500/50 text-rose-100 shadow-rose-950/20'
-              : 'bg-rose-50 border-rose-300 text-rose-950 shadow-rose-200/40'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2.5 rounded-xl shrink-0 ${
-                isDarkMode ? 'bg-rose-500/30 text-rose-300' : 'bg-rose-100 text-rose-700'
-              }`}
-            >
-              <span className="material-symbols-outlined text-2xl block">warning</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-bold tracking-tight">
-                  ACADEMIC RISK ALERT: WARNING
-                </span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
-                    isDarkMode
-                      ? 'bg-rose-500/30 text-rose-200'
-                      : 'bg-rose-200 text-rose-800'
-                  }`}
-                >
-                  ACTION REQUIRED
-                </span>
-              </div>
-              <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                Critical risk detected in {criticalCourse.courseName} ({criticalCourse.courseCode}). Immediate faculty advisory session recommended.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            {studentEvals.map((c) => (
-              <div
-                key={c.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
-                  isDarkMode
-                    ? 'bg-[#141b2c] border-[#1d273a] text-slate-100'
-                    : 'bg-white border-slate-300 text-slate-800 shadow-xs'
-                }`}
-              >
-                <span>{c.courseCode}</span>
-                <StatusBadge status={c.riskLevel} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Active Lecture Banner if teacher has one open */}
-      {activeQRSession && (
-        <div
-          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg transition-colors ${
-            isDarkMode
-              ? 'bg-sky-950/40 border-sky-500/40 text-sky-200'
-              : 'bg-sky-50 border-sky-300 text-sky-950'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
-            <div>
-              <span className={`font-bold text-sm block ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                Classroom Lecture Now Active: {activeQRSession.courseCode} ({activeQRSession.courseName})
-              </span>
-              <span className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                {activeQRSession.room} &bull; Rotating QR token active ({activeQRSession.remainingSeconds}s left)
-              </span>
-            </div>
+      {/* Course-Wise Academic Performance Table with Risk Badges */}
+      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#141d30]">
+          <div>
+            <h3 className="font-bold text-white text-base">Enrolled Courses & Academic Health</h3>
+            <p className="text-xs text-slate-400">Spring 2026 Semester • Department of CSE</p>
           </div>
           <button
-            onClick={() => onNavigate && onNavigate('qr-scanner')}
-            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer shrink-0"
+            onClick={() => setActiveTab('academic-performance')}
+            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
           >
-            Launch QR Scanner
+            <span>Detailed Marks</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      )}
 
-      {/* Main Performance Table (High-contrast in both Light & Dark modes) */}
-      <div className={`p-5 rounded-2xl border space-y-4 ${cardStyle}`}>
-        <div className="flex items-center justify-between">
-          <h2 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-            Academic Performance Overview
-          </h2>
-          <button
-            onClick={() => onNavigate && onNavigate('performance')}
-            className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer flex items-center gap-1"
-          >
-            <span>View Full Report</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className={`uppercase text-[11px] ${tableHeadStyle}`}>
+            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
               <tr>
-                <th className="p-3">Course Code</th>
-                <th className="p-3">Course Name</th>
-                <th className="p-3">Credit</th>
-                <th className="p-3">Attendance</th>
-                <th className="p-3">Quiz (20)</th>
-                <th className="p-3">Assign (20)</th>
-                <th className="p-3">Final (50)</th>
-                <th className="p-3">Total (100)</th>
-                <th className="p-3">Grade</th>
-                <th className="p-3">Grade Point</th>
-                <th className="p-3 text-right">Risk Status</th>
+                <th className="px-5 py-3.5">Course Code & Title</th>
+                <th className="px-4 py-3.5">Instructor</th>
+                <th className="px-4 py-3.5">Credits</th>
+                <th className="px-4 py-3.5">Attendance</th>
+                <th className="px-4 py-3.5">Score / Grade</th>
+                <th className="px-4 py-3.5">Risk Status</th>
+                <th className="px-5 py-3.5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody
-              className={
-                isDarkMode
-                  ? 'divide-y divide-[#1b2538] text-slate-200'
-                  : 'divide-y divide-slate-200 text-slate-800'
-              }
-            >
-              {studentEvals.map((course) => (
+            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              {studentCourses.map(course => (
                 <tr
-                  key={course.id}
-                  className={
-                    isDarkMode
-                      ? 'hover:bg-slate-500/5 transition-colors'
-                      : 'hover:bg-slate-50 transition-colors'
-                  }
+                  key={course.courseId}
+                  className={`hover:bg-slate-800/40 transition-colors ${
+                    course.riskLevel === 'CRITICAL' ? 'bg-rose-500/5' : ''
+                  }`}
                 >
-                  <td className="p-3 font-mono font-bold text-cyan-600 dark:text-cyan-400">
-                    {course.courseCode}
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-white text-sm">{course.courseCode}</p>
+                    <p className="text-slate-400 text-xs mt-0.5">{course.courseTitle}</p>
                   </td>
-                  <td
-                    className={`p-3 font-bold ${
-                      isDarkMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {course.courseName}
+                  <td className="px-4 py-4 text-slate-300">
+                    <p className="font-medium">{course.instructor}</p>
+                    <p className="text-[11px] text-slate-500">{course.section}</p>
                   </td>
-                  <td className="p-3 tabular-nums font-semibold">{course.creditHours}</td>
-                  <td
-                    className={`p-3 tabular-nums font-bold ${
-                      course.attendancePercent < 75
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : isDarkMode
-                        ? 'text-slate-200'
-                        : 'text-slate-800'
-                    }`}
-                  >
-                    {course.attendancePercent}%
+                  <td className="px-4 py-4 font-mono font-semibold text-indigo-300">
+                    {course.credits.toFixed(1)}
                   </td>
-                  <td className="p-3 tabular-nums font-semibold">{course.quizMarks}</td>
-                  <td className="p-3 tabular-nums font-semibold">{course.assignmentMarks}</td>
-                  <td className="p-3 tabular-nums font-semibold">{course.finalExamMarks}</td>
-                  <td
-                    className={`p-3 font-black tabular-nums text-sm ${
-                      isDarkMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {course.totalMarks}
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            course.attendancePercentage >= 75
+                              ? 'bg-emerald-500'
+                              : course.attendancePercentage >= 70
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${course.attendancePercentage}%` }}
+                        />
+                      </div>
+                      <span
+                        className={`font-mono font-bold ${
+                          course.attendancePercentage >= 75
+                            ? 'text-emerald-400'
+                            : course.attendancePercentage >= 70
+                            ? 'text-amber-400'
+                            : 'text-rose-400'
+                        }`}
+                      >
+                        {course.attendancePercentage}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      {course.attendedClasses} of {course.totalClasses} classes
+                    </p>
                   </td>
-                  <td className="p-3 font-bold">
-                    <span
-                      className={
-                        course.grade === 'A+'
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : course.grade === 'A'
-                          ? 'text-sky-600 dark:text-sky-300'
-                          : course.grade === 'B'
-                          ? 'text-amber-600 dark:text-amber-300'
-                          : 'text-rose-600 dark:text-rose-400'
-                      }
-                    >
-                      {course.grade}
-                    </span>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-white text-sm">{course.currentGrade}</span>
+                      <span className="text-slate-400 font-mono text-xs">({course.totalMarksObtained}/100)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">GPA: {course.currentGPA.toFixed(2)}</p>
                   </td>
-                  <td className="p-3 tabular-nums font-semibold">{course.gradePoint.toFixed(2)}</td>
-                  <td className="p-3 text-right">
+                  <td className="px-4 py-4">
                     <StatusBadge status={course.riskLevel} />
+                    <p className="text-[10px] text-slate-400 mt-1 max-w-[200px] line-clamp-1" title={course.riskFactorNotes}>
+                      {course.riskFactorNotes}
+                    </p>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <button
+                      onClick={() => setActiveTab('academic-performance')}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 font-semibold text-xs transition-colors"
+                    >
+                      Breakdown
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -268,304 +259,47 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
-      {/* Analytics Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Progression Trend */}
-        <div className={`p-5 rounded-2xl border space-y-3 ${cardStyle}`}>
-          <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              SGPA / CGPA Progression Trend
-            </h3>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
-                <span className="w-2.5 h-1 rounded-full bg-sky-500" />
-                <span>SGPA</span>
-              </span>
-              <span className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
-                <span className="w-2.5 h-1 rounded-full bg-teal-500" />
-                <span>CGPA</span>
-              </span>
-            </div>
+      {/* Quick Action Shortcuts */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          onClick={() => setActiveTab('qr-scanner')}
+          className="p-5 rounded-2xl border border-indigo-500/20 bg-indigo-600/10 hover:bg-indigo-600/20 cursor-pointer transition-all flex items-center justify-between group"
+        >
+          <div className="space-y-1">
+            <h4 className="font-bold text-white text-sm group-hover:text-indigo-300">QR Attendance Scanner</h4>
+            <p className="text-xs text-slate-400">Scan class session QR code for instant check-in</p>
           </div>
-          <div className="h-56 w-full pt-2">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 500 170">
-              <defs>
-                <linearGradient id="sgpaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#38bdf8" stopOpacity={isDarkMode ? 0.25 : 0.18} />
-                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line
-                x1="35"
-                y1="20"
-                x2="480"
-                y2="20"
-                stroke={isDarkMode ? '#1e293b' : '#e2e8f0'}
-                strokeDasharray="3 3"
-              />
-              <line
-                x1="35"
-                y1="60"
-                x2="480"
-                y2="60"
-                stroke={isDarkMode ? '#1e293b' : '#e2e8f0'}
-                strokeDasharray="3 3"
-              />
-              <line
-                x1="35"
-                y1="100"
-                x2="480"
-                y2="100"
-                stroke={isDarkMode ? '#1e293b' : '#e2e8f0'}
-                strokeDasharray="3 3"
-              />
-              <line
-                x1="35"
-                y1="140"
-                x2="480"
-                y2="140"
-                stroke={isDarkMode ? '#1e293b' : '#e2e8f0'}
-                strokeDasharray="3 3"
-              />
-              <text x="25" y="24" fill={isDarkMode ? '#64748b' : '#475569'} fontSize="10" fontWeight="bold">
-                4.0
-              </text>
-              <text x="25" y="64" fill={isDarkMode ? '#64748b' : '#475569'} fontSize="10" fontWeight="bold">
-                3.5
-              </text>
-              <text x="25" y="104" fill={isDarkMode ? '#64748b' : '#475569'} fontSize="10" fontWeight="bold">
-                3.0
-              </text>
-              <text x="25" y="144" fill={isDarkMode ? '#64748b' : '#475569'} fontSize="10" fontWeight="bold">
-                2.5
-              </text>
-              <path
-                d="M 50 100 C 110 80, 160 50, 220 85 C 280 105, 340 45, 410 80 L 460 75 L 460 150 L 50 150 Z"
-                fill="url(#sgpaGrad)"
-              />
-              <path
-                d="M 50 100 C 110 80, 160 50, 220 85 C 280 105, 340 45, 410 80 L 460 75"
-                fill="none"
-                stroke="#0284c7"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M 50 100 C 110 90, 170 82, 230 84 C 290 85, 350 72, 410 68 L 460 62"
-                fill="none"
-                stroke="#0d9488"
-                strokeWidth="2"
-                strokeDasharray="4 2"
-                strokeLinecap="round"
-              />
-              <circle cx="50" cy="100" r="3.5" fill="#0284c7" />
-              <circle cx="130" cy="80" r="3.5" fill="#0284c7" />
-              <circle cx="210" cy="60" r="3.5" fill="#0284c7" />
-              <circle cx="290" cy="85" r="3.5" fill="#0284c7" />
-              <circle cx="370" cy="55" r="3.5" fill="#0284c7" />
-              <circle cx="450" cy="75" r="3.5" fill="#0284c7" />
-              {GPA_TREND_DATA.map((d, i) => (
-                <text
-                  key={i}
-                  x={50 + i * 80}
-                  y="164"
-                  fill={isDarkMode ? '#94a3b8' : '#334155'}
-                  fontSize="10"
-                  fontWeight="600"
-                  textAnchor="middle"
-                >
-                  {d.semester}
-                </text>
-              ))}
-            </svg>
+          <div className="p-3 rounded-xl bg-indigo-600/30 text-indigo-300">
+            <QrCode className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Weekly Attendance Telemetry */}
-        <div className={`p-5 rounded-2xl border space-y-3 ${cardStyle}`}>
-          <div className="flex items-center justify-between">
-            <h3 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              Weekly Attendance Telemetry (%)
-            </h3>
-            <span className="text-xs font-bold text-sky-600 dark:text-sky-400">
-              Current Average: {student.overallAttendance}%
-            </span>
+        <div
+          onClick={() => setActiveTab('assignments')}
+          className="p-5 rounded-2xl border border-purple-500/20 bg-purple-600/10 hover:bg-purple-600/20 cursor-pointer transition-all flex items-center justify-between group"
+        >
+          <div className="space-y-1">
+            <h4 className="font-bold text-white text-sm group-hover:text-purple-300">Assignment Desk</h4>
+            <p className="text-xs text-slate-400">View deadlines & upload project submissions</p>
           </div>
-          <div className="h-56 w-full flex items-end justify-between gap-2 pt-6 px-2">
-            {ATTENDANCE_TREND_DATA.map((item, idx) => {
-              const isShort = item.attendance < 75;
-              return (
-                <div
-                  key={idx}
-                  className="flex-1 flex flex-col items-center gap-2 h-full justify-end group"
-                >
-                  <span
-                    className={`text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity tabular-nums ${
-                      isDarkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
-                  >
-                    {item.attendance}%
-                  </span>
-                  <div
-                    className={`w-full rounded-t-lg h-36 flex items-end p-0.5 transition-colors ${
-                      isDarkMode ? 'bg-[#162035]' : 'bg-slate-100'
-                    }`}
-                  >
-                    <div
-                      className={`w-full rounded-t-md transition-all duration-300 ${
-                        isShort
-                          ? 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-sm shadow-amber-500/20'
-                          : 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-sm shadow-sky-500/20'
-                      }`}
-                      style={{ height: `${item.attendance}%` }}
-                    />
-                  </div>
-                  <span
-                    className={`text-[10px] font-semibold ${
-                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`}
-                  >
-                    {item.week}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="p-3 rounded-xl bg-purple-600/30 text-purple-300">
+            <FileCheck2 className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('previous-results')}
+          className="p-5 rounded-2xl border border-emerald-500/20 bg-emerald-600/10 hover:bg-emerald-600/20 cursor-pointer transition-all flex items-center justify-between group"
+        >
+          <div className="space-y-1">
+            <h4 className="font-bold text-white text-sm group-hover:text-emerald-300">Previous Results</h4>
+            <p className="text-xs text-slate-400">Submit retake, backlog, or grade improvements</p>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-600/30 text-emerald-300">
+            <UserCheck className="w-5 h-5" />
           </div>
         </div>
       </div>
-
-      {/* Bottom Action & Activity Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Attendance Action Desk */}
-        <div className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 ${cardStyle}`}>
-          <div>
-            <div className="flex items-center gap-2 mb-2 text-cyan-600 dark:text-cyan-400">
-              <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
-              <h3 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                Attendance Action Desk
-              </h3>
-            </div>
-            <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-              Scan live lecture room QR codes generated by faculty to instantly log classroom attendance.
-            </p>
-          </div>
-          <button
-            onClick={() => onNavigate && onNavigate('qr-scanner')}
-            className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">photo_camera</span>
-            <span>Scan Attendance QR Now</span>
-          </button>
-        </div>
-
-        {/* Recent Activity Audit */}
-        <div className={`p-5 rounded-2xl border space-y-3 ${cardStyle}`}>
-          <h3 className={`text-sm font-extrabold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-            Recent Activity Audit
-          </h3>
-          <div className="space-y-2">
-            {RECENT_ACTIVITIES.map((act) => (
-              <div
-                key={act.id}
-                className={`p-2.5 rounded-xl flex items-center justify-between text-xs transition-colors ${
-                  isDarkMode ? 'bg-[#0c1221] border border-[#1b2538]' : 'bg-slate-50 border border-slate-200'
-                }`}
-              >
-                <div>
-                  <div className={`font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
-                    {act.title}
-                  </div>
-                  <div className="text-[10px] text-sky-600 dark:text-sky-400 font-extrabold">{act.course}</div>
-                </div>
-                <span className={`text-[10px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>
-                  {act.time}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Live Daily Routine & Room Tracker Widget */}
-        <div className="space-y-2">
-          <ClassRoutineTracker compactMode={true} onNavigate={onNavigate} isDarkMode={isDarkMode} />
-          <button
-            onClick={() => setShowFullRoutineModal(true)}
-            className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
-              isDarkMode
-                ? 'bg-[#141d30] hover:bg-[#1a2640] border-[#233150] text-cyan-300'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-cyan-700'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>View Full Weekly Routine & Room Directory</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Full Weekly Class Routine Modal */}
-      {showFullRoutineModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div
-            className={`border rounded-3xl max-w-5xl w-full p-6 shadow-2xl space-y-4 my-auto animate-fadeIn max-h-[90vh] overflow-y-auto ${
-              isDarkMode
-                ? 'bg-[#0b101d] border-[#202e4c] text-white'
-                : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          >
-            <div
-              className={`flex items-center justify-between border-b pb-3 ${
-                isDarkMode ? 'border-[#1c2942]' : 'border-slate-200'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                    isDarkMode
-                      ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-                      : 'bg-cyan-50 text-cyan-700 border-cyan-200'
-                  }`}
-                >
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3
-                    className={`text-base font-bold flex items-center gap-2 ${
-                      isDarkMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    <span>Weekly Class Schedule & Live Room Directory</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                        isDarkMode
-                          ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
-                          : 'bg-cyan-50 text-cyan-800 border-cyan-200'
-                      }`}
-                    >
-                      {currentUser?.batch || '58th Batch'} &bull; {currentUser?.section || 'Section A'}
-                    </span>
-                  </h3>
-                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Department of Computer Science & Engineering &bull; Metropolitan University
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowFullRoutineModal(false)}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
-                  isDarkMode
-                    ? 'bg-[#162035] text-slate-400 hover:text-white'
-                    : 'bg-slate-100 text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <ClassRoutineTracker onNavigate={onNavigate} isDarkMode={isDarkMode} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

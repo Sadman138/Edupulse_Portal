@@ -1,163 +1,137 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { attendanceLog } from '../../data/studentModuleData';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import {
+  CalendarCheck,
+  QrCode,
+  Filter,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Download
+} from 'lucide-react';
 
-interface StudentAttendanceProps {
-  isDarkMode?: boolean;
-}
+export const StudentAttendance: React.FC = () => {
+  const { attendanceLogs, setActiveTab, studentCourses } = useApp();
+  const [filterCourse, setFilterCourse] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
-export const StudentAttendance: React.FC<StudentAttendanceProps> = ({ isDarkMode = true }) => {
-  const { evaluations, student } = useApp();
-  const studentEvals = evaluations.filter((e) => e.studentId === student.id);
-
-  const [filterCourse, setFilterCourse] = useState('ALL');
-  const [filterStatus, setFilterStatus] = useState('ALL');
-
-  const cardStyle = isDarkMode
-    ? 'bg-[#101726] border-[#1d273a] shadow-lg backdrop-blur-xl'
-    : 'bg-white border-slate-200 shadow-sm text-slate-800';
-
-  const filteredLogs = attendanceLog.filter((log) => {
-    const matchCourse = filterCourse === 'ALL' || log.code === filterCourse;
-    const matchStatus = filterStatus === 'ALL' || log.status === filterStatus;
-    return matchCourse && matchStatus;
+  const filteredLogs = attendanceLogs.filter(log => {
+    if (filterCourse !== 'ALL' && log.courseCode !== filterCourse) return false;
+    if (filterStatus !== 'ALL' && log.status !== filterStatus) return false;
+    return true;
   });
 
+  const totalSessions = attendanceLogs.length;
+  const presentCount = attendanceLogs.filter(l => l.status === 'PRESENT').length;
+  const lateCount = attendanceLogs.filter(l => l.status === 'LATE').length;
+  const absentCount = attendanceLogs.filter(l => l.status === 'ABSENT').length;
+
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold">Attendance Telemetry & Session Audit</h2>
-          <p className="text-xs opacity-70">
-            Course-wise classroom presence audits, derived continuous attendance marks, and live shortage alerts.
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Attendance Log & Verification History
+          </h2>
+          <p className="text-xs text-slate-400">
+            Real-time biometric & dynamic QR session attendance logs
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-[#141b2c] border border-[#1e273a] px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-2">
-            <span className="text-slate-400">Institutional Threshold:</span>
-            <span className="text-emerald-400 font-bold">&ge; 75% Required</span>
-          </div>
+
+        <button
+          onClick={() => setActiveTab('qr-scanner')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all w-fit"
+        >
+          <QrCode className="w-4 h-4" />
+          <span>Launch QR Scanner</span>
+        </button>
+      </div>
+
+      {/* Attendance Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs text-slate-400 font-semibold uppercase">Total Sessions</p>
+          <p className="text-2xl font-black text-white mt-1">{totalSessions}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <p className="text-xs font-semibold uppercase">Present</p>
+          <p className="text-2xl font-black mt-1">{presentCount}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+          <p className="text-xs font-semibold uppercase">Late</p>
+          <p className="text-2xl font-black mt-1">{lateCount}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+          <p className="text-xs font-semibold uppercase">Absent</p>
+          <p className="text-2xl font-black mt-1">{absentCount}</p>
         </div>
       </div>
 
-      {/* Course Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {studentEvals.map((course) => {
-          const isEligible = course.attendancePercent >= 75;
-          return (
-            <div
-              key={course.id}
-              className={`p-5 rounded-2xl border space-y-3.5 transition-all ${cardStyle} ${
-                !isEligible ? 'border-rose-900/60' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-cyan-400">{course.courseCode}</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                    isEligible
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                  }`}
-                >
-                  {isEligible ? 'ELIGIBLE' : 'SHORTAGE'}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-white truncate">{course.courseName}</h3>
-                <span className="text-[11px] text-slate-400 mt-0.5 block">
-                  Continuous Marks: <strong className="text-cyan-400">{course.attendanceMarks} / 10</strong>
-                </span>
-              </div>
-              <div className="space-y-1.5 pt-1 border-t border-[#1a2336]">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Attendance Rate</span>
-                  <span className={`font-bold tabular-nums ${isEligible ? 'text-white' : 'text-rose-400'}`}>
-                    {course.attendancePercent}%
-                  </span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      isEligible ? 'bg-emerald-500' : 'bg-rose-500'
-                    }`}
-                    style={{ width: `${course.attendancePercent}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Session Audit Logs Table */}
-      <div className={`p-5 rounded-2xl border space-y-4 ${cardStyle}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1b2538] pb-4">
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-cyan-400">event_available</span>
-              <span>Classroom Attendance Session Logs</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Individual class check-in events recorded via dynamic QR scans and faculty manual roll calls.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={filterCourse}
-              onChange={(e) => setFilterCourse(e.target.value)}
-              className="bg-[#141b2c] border border-[#222d44] text-xs text-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-cyan-500"
-            >
-              <option value="ALL">All Courses</option>
-              <option value="CSE 301">CSE 301</option>
-              <option value="CSE 303">CSE 303</option>
-              <option value="CSE 305">CSE 305</option>
-              <option value="CSE 307">CSE 307</option>
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-[#141b2c] border border-[#222d44] text-xs text-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-cyan-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-            </select>
-          </div>
+      {/* Filters Bar */}
+      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[#111827] border border-slate-800">
+        <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
+          <Filter className="w-4 h-4 text-indigo-400" />
+          <span>Filter Logs:</span>
         </div>
 
+        <select
+          value={filterCourse}
+          onChange={e => setFilterCourse(e.target.value)}
+          className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          <option value="ALL">All Enrolled Courses</option>
+          {studentCourses.map(c => (
+            <option key={c.courseId} value={c.courseCode}>{c.courseCode} - {c.courseTitle}</option>
+          ))}
+        </select>
+
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="PRESENT">Present Only</option>
+          <option value="LATE">Late Only</option>
+          <option value="ABSENT">Absent Only</option>
+        </select>
+      </div>
+
+      {/* Logs Table */}
+      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[#1b2538] text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                <th className="py-3 px-4">DATE</th>
-                <th className="py-3 px-4">COURSE CODE</th>
-                <th className="py-3 px-4">SCHEDULE TIME</th>
-                <th className="py-3 px-4">ROOM / LAB</th>
-                <th className="py-3 px-4 text-right">STATUS</th>
+            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th className="px-5 py-3.5">Date & Time</th>
+                <th className="px-5 py-3.5">Course Code & Title</th>
+                <th className="px-5 py-3.5">Classroom</th>
+                <th className="px-5 py-3.5">Verification Method</th>
+                <th className="px-5 py-3.5 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#172033] text-slate-200">
-              {filteredLogs.map((log, i) => (
-                <tr key={i} className="hover:bg-slate-500/5 transition-colors">
-                  <td className="py-3 px-4 font-mono text-slate-300">{log.date}</td>
-                  <td className="py-3 px-4 font-bold text-cyan-400 font-mono">{log.code}</td>
-                  <td className="py-3 px-4 text-slate-400">{log.time || '10:00 AM'}</td>
-                  <td className="py-3 px-4 text-slate-300">{log.room || 'Lab 302'}</td>
-                  <td className="py-3 px-4 text-right">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono ${
-                        log.status === 'present'
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-xs">
-                        {log.status === 'present' ? 'check' : 'close'}
-                      </span>
-                      <span>{log.status}</span>
+            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              {filteredLogs.map(log => (
+                <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="px-5 py-4 font-mono">
+                    <p className="font-semibold text-white">{log.date}</p>
+                    <p className="text-[11px] text-slate-500">{log.timeSlot}</p>
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-white text-sm">{log.courseCode}</p>
+                    <p className="text-slate-400 text-xs">{log.courseTitle}</p>
+                  </td>
+                  <td className="px-5 py-4 text-slate-400 font-medium">
+                    {log.room}
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="font-mono text-[11px] bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 text-slate-300">
+                      {log.verifiedVia === 'DYNAMIC_QR' ? '⚡ DYNAMIC QR TOKEN' : '📋 MANUAL TEACHER ROSTER'}
                     </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <StatusBadge status={log.status} />
                   </td>
                 </tr>
               ))}

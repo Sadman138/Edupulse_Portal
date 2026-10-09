@@ -1,60 +1,46 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { RiskLevel } from '../../types';
 
 interface StatusBadgeProps {
-  status: string;
+  status?: 'SAFE' | 'WARNING' | 'CRITICAL' | 'PRESENT' | 'ABSENT' | 'LATE' | 'PENDING' | 'SUBMITTED' | 'GRADED' | 'VERIFIED' | 'REJECTED' | 'Active' | 'Probation' | 'Inactive' | string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const { isDarkMode } = useApp();
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm', className = '' }) => {
+  if (!status) return null;
 
-  const getStyles = () => {
-    const s = status?.toUpperCase();
-    if (isDarkMode) {
-      switch (s) {
-        case 'SAFE':
-          return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
-        case 'WARNING':
-          return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
-        case 'CRITICAL':
-          return 'bg-rose-500/15 text-rose-300 border-rose-500/40';
-        case 'SUBMITTED':
-        case 'VERIFIED':
-          return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
-        case 'PENDING':
-          return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
-        case 'REJECTED':
-          return 'bg-rose-500/15 text-rose-300 border-rose-500/40';
-        default:
-          return 'bg-slate-500/15 text-slate-300 border-slate-500/40';
-      }
-    } else {
-      // Light Mode: High contrast, saturated, crystal clear and bold
-      switch (s) {
-        case 'SAFE':
-          return 'bg-emerald-100 text-emerald-900 border-emerald-300 font-extrabold shadow-2xs';
-        case 'WARNING':
-          return 'bg-amber-100 text-amber-900 border-amber-300 font-extrabold shadow-2xs';
-        case 'CRITICAL':
-          return 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold shadow-2xs';
-        case 'SUBMITTED':
-        case 'VERIFIED':
-          return 'bg-sky-100 text-sky-900 border-sky-300 font-extrabold shadow-2xs';
-        case 'PENDING':
-          return 'bg-amber-100 text-amber-900 border-amber-300 font-extrabold shadow-2xs';
-        case 'REJECTED':
-          return 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold shadow-2xs';
-        default:
-          return 'bg-slate-200 text-slate-900 border-slate-300 font-extrabold shadow-2xs';
-      }
-    }
+  let badgeColor = 'bg-slate-700/60 text-slate-300 border-slate-600/40';
+  let dotColor = 'bg-slate-400';
+
+  const normalized = status.toUpperCase();
+
+  if (normalized === 'SAFE' || normalized === 'PRESENT' || normalized === 'VERIFIED' || normalized === 'GRADED' || normalized === 'ACTIVE') {
+    badgeColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+    dotColor = 'bg-emerald-400 animate-pulse';
+  } else if (normalized === 'WARNING' || normalized === 'LATE' || normalized === 'PENDING' || normalized === 'IMPORTANT') {
+    badgeColor = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+    dotColor = 'bg-amber-400';
+  } else if (normalized === 'CRITICAL' || normalized === 'ABSENT' || normalized === 'REJECTED' || normalized === 'OVERDUE' || normalized === 'URGENT' || normalized === 'PROBATION') {
+    badgeColor = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+    dotColor = 'bg-rose-500 animate-ping';
+  } else if (normalized === 'SUBMITTED') {
+    badgeColor = 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+    dotColor = 'bg-blue-400';
+  }
+
+  const sizeClasses = {
+    sm: 'text-xs px-2.5 py-0.5 font-medium',
+    md: 'text-sm px-3 py-1 font-semibold',
+    lg: 'text-base px-3.5 py-1.5 font-semibold'
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-mono text-[10px] font-extrabold border tracking-wider uppercase transition-colors ${getStyles()}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border ${badgeColor} ${sizeClasses[size]} ${className}`}
     >
-      {status}
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <span>{status}</span>
     </span>
   );
 };

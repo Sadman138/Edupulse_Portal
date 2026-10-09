@@ -1,104 +1,119 @@
 import React from 'react';
-import { X, Printer, Download, FileText, CheckCircle2, ShieldCheck, Building2 } from 'lucide-react';
-import { printFormattedDocument, downloadHTMLDocument } from '../../utils/pdfGenerator';
+import { useApp } from '../../context/AppContext';
+import { X, Download, FileText, CheckCircle2, ShieldCheck, Printer } from 'lucide-react';
 
-interface PDFDocumentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  documentRef?: string;
-  documentType: 'ASSIGNMENT' | 'NOTICE' | 'TRANSCRIPT' | 'ATTENDANCE';
-  htmlContent: string;
-  filename: string;
-}
+export const PDFDocumentModal: React.FC = () => {
+  const { pdfModalDoc, setPdfModalDoc, currentUser } = useApp();
 
-export const PDFDocumentModal: React.FC<PDFDocumentModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  documentRef = 'MU/CSE/OFFICIAL',
-  documentType,
-  htmlContent,
-  filename
-}) => {
-  if (!isOpen) return null;
-
-  const handlePrint = () => {
-    printFormattedDocument(htmlContent, filename);
-  };
+  if (!pdfModalDoc) return null;
 
   const handleDownload = () => {
-    downloadHTMLDocument(htmlContent, filename);
+    // Generate a printable/downloadable text slip
+    const element = document.createElement('a');
+    const file = new Blob([
+      `METROPOLITAN UNIVERSITY — OFFICIAL ACADEMIC DOCUMENT\n` +
+      `Title: ${pdfModalDoc.title}\n` +
+      `Category: ${pdfModalDoc.category || 'Academic Document'}\n` +
+      `Date Generated: ${new Date().toLocaleDateString()}\n` +
+      `User: ${currentUser.name} (${currentUser.role})\n` +
+      `-----------------------------------------\n\n` +
+      `${pdfModalDoc.content || 'Document content verified by Metropolitan University Academic Controller.'}\n\n` +
+      `Signed electronically by: Metropolitan University Controller of Examinations.`
+    ], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${pdfModalDoc.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Top Control Bar */}
-        <div className="p-4 border-b border-[#1e293b] bg-[#131d33] flex items-center justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-[#111827] border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#162032]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+            <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                <span>{title}</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold bg-slate-800 text-cyan-300 border border-cyan-500/20">
-                  {documentType}
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400 font-mono">
-                Ref: {documentRef} &bull; Metropolitan University Official PDF
-              </p>
+              <h3 className="font-semibold text-white text-base line-clamp-1">{pdfModalDoc.title}</h3>
+              <p className="text-xs text-slate-400">Official Institutional Document Viewer</p>
             </div>
           </div>
+          <button
+            onClick={() => setPdfModalDoc(null)}
+            className="p-1.5 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
+        {/* Content Body simulating PDF sheet */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-200">
+          <div className="bg-white text-slate-900 rounded-xl p-6 sm:p-8 shadow-inner font-sans border border-slate-200 space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-200 pb-4">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight text-indigo-950 uppercase">
+                  Metropolitan University
+                </h2>
+                <p className="text-xs text-slate-600 font-medium">Department of Computer Science & Engineering</p>
+                <p className="text-[11px] text-slate-500">Al-Hamra Campus / Bateshwar Permanent Campus, Sylhet, Bangladesh</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-mono font-semibold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  {pdfModalDoc.category || 'OFFICIAL'}
+                </span>
+                <p className="text-[11px] text-slate-400 mt-1">Ref: MU/CSE/{new Date().getFullYear()}/DOC-821</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 py-2">
+              <h4 className="text-base font-bold text-slate-900 border-l-4 border-indigo-600 pl-3">
+                {pdfModalDoc.title}
+              </h4>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                {pdfModalDoc.content || 'This document has been archived into the central EduPulse Academic Information System. All course specifications, grading rubrics, exam eligibility thresholds (75% minimum attendance), and university statutes are endorsed by the Academic Council.'}
+              </p>
+            </div>
+
+            <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-xs text-slate-500">
+              <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Digitally Verified Document ID: #MU-EP-2026-X99</span>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-slate-800">Controller of Examinations</p>
+                <p className="text-[10px]">Metropolitan University, Sylhet</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="px-6 py-4 border-t border-slate-800 bg-[#162032] flex items-center justify-between">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Print Document</span>
+          </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-md shadow-cyan-600/25 flex items-center gap-1.5 cursor-pointer"
-              title="Print or Save as PDF"
+              onClick={() => setPdfModalDoc(null)}
+              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save as PDF</span>
+              Close
             </button>
-
             <button
               onClick={handleDownload}
-              className="px-3 py-1.5 rounded-xl bg-[#1e293b] hover:bg-[#28354d] text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer border border-[#334155]"
-              title="Download standalone HTML document file"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-              title="Close Preview"
-            >
-              <X className="w-5 h-5" />
+              <Download className="w-4 h-4" />
+              <span>Download File</span>
             </button>
           </div>
-        </div>
-
-        {/* Paper Document Preview Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#090e1a]">
-          <div className="max-w-3xl mx-auto bg-white text-slate-900 rounded-xl p-8 sm:p-12 shadow-2xl border border-slate-300 print:border-none print:shadow-none min-h-[600px]">
-            <div
-              className="prose prose-slate max-w-none text-slate-900"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          </div>
-        </div>
-
-        {/* Bottom Status Info */}
-        <div className="p-3 bg-[#131d33] border-t border-[#1e293b] flex items-center justify-between text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Official Academic Document &bull; Digitally Signed</span>
-          </div>
-          <span className="text-[11px] text-slate-500 font-mono">EduPulse Academic Gateway &bull; Akhaliya, Sylhet</span>
         </div>
       </div>
     </div>

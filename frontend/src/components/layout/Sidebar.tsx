@@ -1,142 +1,121 @@
 import React from 'react';
+import { useApp } from '../../context/AppContext';
 import {
   LayoutDashboard,
+  Calendar,
+  BookOpen,
   ClipboardCheck,
   QrCode,
+  Users,
+  FileSpreadsheet,
+  FileCheck2,
+  BookMarked,
+  Bell,
+  AlertTriangle,
+  Terminal,
   GraduationCap,
-  FileText,
-  BookOpen,
-  BellRing,
-  Calendar,
-  CalendarCheck,
-  BarChart3,
-  Award
+  Award,
+  Layers,
+  Building,
+  CalendarDays,
+  UserCheck,
+  UserPlus,
+  GitBranch,
+  ShieldCheck
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
-import { ThemeColor, themePalette } from '../../theme/epTheme';
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose?: () => void;
-  forcedRole?: 'TEACHER' | 'ADMIN';
-  dock?: 'left' | 'top' | 'right';
-  themeColor?: ThemeColor;
-  isDarkMode?: boolean;
-  customHex?: string;
-}
+export const Sidebar: React.FC = () => {
+  const { currentUser, activeTab, setActiveTab, theme, highRiskAlerts } = useApp();
 
-interface NavItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: number | string;
-  badgeColor?: string;
-  isDanger?: boolean;
-}
+  interface NavItem {
+    id: string;
+    label: string;
+    icon: any;
+    badge?: number | string;
+    badgeColor?: string;
+    danger?: boolean;
+  }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  onClose,
-  forcedRole,
-  dock = 'left',
-  themeColor = 'cyan',
-  isDarkMode = true,
-  customHex
-}) => {
-  const { currentRole, activeNav, setActiveNav } = useApp();
-  const role = forcedRole || currentRole;
+  // Teacher Nav (matches image screenshot exactly)
+  const teacherNav: NavItem[] = [
+    { id: 'teacher-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'teacher-routine', label: 'Class Routine & Rooms', icon: Calendar },
+    { id: 'teacher-courses', label: 'My Courses', icon: BookOpen },
+    { id: 'teacher-manual-attendance', label: 'Manual Attendance', icon: ClipboardCheck },
+    { id: 'teacher-qr', label: 'QR Generator', icon: QrCode },
+    { id: 'teacher-roster', label: 'Students Roster', icon: Users },
+    { id: 'teacher-assessments', label: 'Assessments Desk', icon: FileSpreadsheet },
+    { id: 'teacher-assignments', label: 'Assignments', icon: FileCheck2 },
+    { id: 'teacher-materials', label: 'Study Materials', icon: BookMarked },
+    { id: 'teacher-notices', label: 'Notices', icon: Bell },
+    {
+      id: 'teacher-risk-desk',
+      label: 'High-Risk Alerts',
+      icon: AlertTriangle,
+      danger: true,
+      badge: highRiskAlerts.length || 3,
+      badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+    }
+  ];
 
-  const getNavItems = (): NavItem[] => {
-    return [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'class-routine', label: 'Class Routine & Rooms', icon: Calendar },
-      { id: 'performance', label: 'Academic Performance', icon: BarChart3 },
-      { id: 'attendance', label: 'Attendance Telemetry', icon: ClipboardCheck },
-      { id: 'qr-scanner', label: 'QR Scanner', icon: QrCode },
-      { id: 'previous-results', label: 'Previous Results', icon: GraduationCap },
-      { id: 'assignments', label: 'Assignments', icon: FileText },
-      { id: 'study-materials', label: 'Study Materials', icon: BookOpen },
-      { id: 'notices', label: 'Notices', icon: BellRing },
-      { id: 'co-curricular', label: 'Co-Curricular', icon: Award },
-      {
-        id: 'weekly-progress',
-        label: 'Week 1-4 Syllabus Tracker',
-        icon: CalendarCheck,
-        badge: 'W4 Done',
-        badgeColor: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-      }
-    ];
-  };
+  // Student Nav
+  const studentNav: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'academic-performance', label: 'Academic Performance', icon: GraduationCap },
+    { id: 'attendance', label: 'Attendance Log', icon: ClipboardCheck },
+    { id: 'qr-scanner', label: 'QR Attendance Scanner', icon: QrCode },
+    { id: 'class-routine', label: 'Class Routine & Rooms', icon: Calendar },
+    { id: 'syllabus-tracker', label: 'Syllabus Tracker', icon: Layers },
+    { id: 'assignments', label: 'Assignments Hub', icon: FileCheck2 },
+    { id: 'notices', label: 'Notices', icon: Bell },
+    { id: 'study-materials', label: 'Study Materials', icon: BookMarked },
+    { id: 'previous-results', label: 'Previous Results', icon: FileSpreadsheet },
+    { id: 'co-curricular', label: 'Co-Curricular Profile', icon: Award }
+  ];
 
-  const navItems = getNavItems();
+  // Admin Nav
+  const adminNav: NavItem[] = [
+    { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'admin-departments', label: 'Departments (CRUD)', icon: Building },
+    { id: 'admin-semesters', label: 'Semesters (CRUD)', icon: CalendarDays },
+    { id: 'admin-courses', label: 'Courses Catalog', icon: BookMarked },
+    { id: 'admin-instructors', label: 'Faculty Directory', icon: UserCheck },
+    { id: 'admin-students', label: 'Students Registry', icon: UserPlus },
+    { id: 'admin-allocations', label: 'Course Allocations', icon: GitBranch }
+  ];
 
-  const handleNavClick = (id: string) => {
-    setActiveNav(id);
-    if (onClose) onClose();
-  };
+  let currentNav = teacherNav;
+  let scopeTitle = 'Teacher Panel';
+  if (currentUser.role === 'STUDENT') {
+    currentNav = studentNav;
+    scopeTitle = 'Student Panel';
+  } else if (currentUser.role === 'ADMIN') {
+    currentNav = adminNav;
+    scopeTitle = 'Administrator Panel';
+  }
 
-  const activeStyles: Record<string, string> = {
-    cyan: 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30',
-    emerald: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30',
-    blue: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-600/30',
-    indigo: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/30',
-    purple: 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/30',
-    amber: 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-600/30',
-    orange: 'bg-gradient-to-r from-orange-600 to-rose-600 text-white shadow-lg shadow-orange-600/30',
-    rose: 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30',
-    teal: 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-600/30',
-    slate: 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-700/30'
-  };
+  const isTop = theme.sidebarPosition === 'top';
 
-  const activeClass =
-    themeColor === 'custom'
-      ? 'text-white shadow-lg'
-      : activeStyles[themeColor] || activeStyles.cyan;
-
-  const customActiveStyle =
-    themeColor === 'custom' && customHex
-      ? { backgroundColor: customHex }
-      : undefined;
-
-  // Inactive style based on light vs dark mode
-  const inactiveClass = isDarkMode
-    ? 'text-slate-400 hover:text-slate-200 hover:bg-[#121927]'
-    : 'text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-extrabold';
-
-  // Top Dock: Horizontal Navbar Strip
-  if (dock === 'top') {
+  if (isTop) {
     return (
-      <nav
-        className={`fixed left-0 right-0 top-16 h-12 z-30 border-b backdrop-blur-xl flex items-center gap-1.5 px-4 overflow-x-auto select-none transition-colors ${
-          isDarkMode
-            ? 'bg-[#090d16]/95 border-[#1c2436] text-slate-200'
-            : 'bg-white/95 border-slate-200 text-slate-800'
-        }`}
-      >
-        {navItems.map((item) => {
-          const isActive = activeNav === item.id;
+      <nav className="w-full bg-[#080d1a] border-b border-slate-800 px-4 py-2 overflow-x-auto flex items-center gap-1.5 scrollbar-thin">
+        {currentNav.map(item => {
           const Icon = item.icon;
+          const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              style={isActive ? customActiveStyle : undefined}
-              className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+              onClick={() => setActiveTab(item.id)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive
-                  ? activeClass
-                  : item.isDanger
-                  ? 'text-rose-500 hover:text-rose-600 dark:hover:text-rose-200 hover:bg-rose-50 dark:hover:bg-[#191522]'
-                  : inactiveClass
+                  ? 'bg-cyan-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon className="w-4 h-4" />
               <span>{item.label}</span>
-              {item.badge && (
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
-                    item.badgeColor || 'bg-violet-500/20 text-violet-600 dark:text-violet-300'
-                  }`}
-                >
+              {item.badge !== undefined && (
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500 text-white">
                   {item.badge}
                 </span>
               )}
@@ -147,119 +126,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   }
 
-  // Left or Right Vertical Dock
-  const sideBorder =
-    dock === 'right'
-      ? isDarkMode
-        ? 'right-0 border-l border-[#1c2436]'
-        : 'right-0 border-l border-slate-200'
-      : isDarkMode
-      ? 'left-0 border-r border-[#1c2436]'
-      : 'left-0 border-r border-slate-200';
-
   return (
-    <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/70 z-30 md:hidden backdrop-blur-xs"
-          onClick={onClose}
-        />
-      )}
-
-      <aside
-        className={`w-60 ${sideBorder} flex flex-col justify-between p-4 fixed md:static inset-y-0 z-30 transform transition-all duration-200 ease-in-out shrink-0 select-none ${
-          isDarkMode ? 'bg-[#090d16] text-slate-200' : 'bg-white text-slate-800 shadow-sm'
-        } ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
-      >
-        <div>
-          {/* Console Scope Header */}
-          <div className="mb-4">
-            <div
-              className={`p-3 rounded-2xl border flex items-center justify-between transition-colors ${
-                isDarkMode
-                  ? 'border-[#1b2538] bg-[#101726]'
-                  : 'border-slate-200 bg-slate-50'
-              }`}
-            >
-              <div className="flex flex-col text-left">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Console Scope
-                </span>
-                <span
-                  className={`text-xs font-bold capitalize mt-0.5 ${
-                    isDarkMode ? 'text-white' : 'text-slate-900'
-                  }`}
-                >
-                  {role.toLowerCase()} Panel
-                </span>
-              </div>
-              <span className="material-symbols-outlined text-base text-slate-400">terminal</span>
-            </div>
+    <aside className="w-64 bg-[#080d1a] border-r border-slate-800/90 p-4 flex flex-col justify-between shrink-0 min-h-[calc(100vh-62px)] select-none">
+      <div className="space-y-4">
+        {/* Top CONSOLE SCOPE card from Screenshot */}
+        <div className="px-4 py-3 rounded-2xl bg-[#0d1627] border border-slate-800/90 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+              CONSOLE SCOPE
+            </p>
+            <p className="text-xs font-bold text-white mt-0.5">
+              {scopeTitle}
+            </p>
           </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = activeNav === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  style={isActive ? customActiveStyle : undefined}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                    isActive
-                      ? activeClass
-                      : item.isDanger
-                      ? 'text-rose-500 hover:text-rose-600 dark:hover:text-rose-200 hover:bg-rose-50 dark:hover:bg-[#191522]'
-                      : inactiveClass
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 shrink-0 ${
-                        isActive
-                          ? 'text-white'
-                          : item.isDanger
-                          ? 'text-rose-500'
-                          : isDarkMode
-                          ? 'text-slate-400'
-                          : 'text-slate-700'
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        item.badgeColor || 'bg-violet-500/20 text-violet-600 dark:text-violet-300'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Footer info in sidebar */}
-        <div
-          className={`pt-4 border-t text-[11px] ${
-            isDarkMode ? 'border-[#192236] text-slate-500' : 'border-slate-200 text-slate-600'
-          }`}
-        >
-          <div className="flex items-center justify-between font-mono">
-            <span>Spring 2026</span>
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Online
-            </span>
+          <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
+            <Terminal className="w-4 h-4 text-cyan-400" />
           </div>
         </div>
-      </aside>
-    </>
+
+        {/* Navigation list */}
+        <div className="space-y-1">
+          {currentNav.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold shadow-md shadow-cyan-600/20'
+                    : item.danger
+                    ? 'text-rose-400 hover:bg-rose-500/10 hover:text-rose-300'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                      isActive
+                        ? 'text-white'
+                        : item.danger
+                        ? 'text-rose-400'
+                        : 'text-slate-400 group-hover:text-cyan-400'
+                    }`}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </div>
+
+                {item.badge !== undefined && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                    item.badgeColor || 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* University Accreditation Footer */}
+      <div className="pt-4 border-t border-slate-800/80 px-2 text-[11px] text-slate-500">
+        <p className="font-semibold text-slate-400">Metropolitan University</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Academic Early Warning Architecture</p>
+      </div>
+    </aside>
   );
 };

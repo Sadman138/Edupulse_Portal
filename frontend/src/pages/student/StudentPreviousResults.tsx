@@ -1,205 +1,236 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import {
+  FileSpreadsheet,
+  Plus,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileCheck2,
+  TrendingUp,
+  Award
+} from 'lucide-react';
 
-interface StudentPreviousResultsProps {
-  isDarkMode?: boolean;
-}
+export const StudentPreviousResults: React.FC = () => {
+  const { previousResults, submitPreviousResult, currentUser } = useApp();
+  const [showModal, setShowModal] = useState(false);
+  const [semesterName, setSemesterName] = useState('4th Semester (Fall 2025)');
+  const [completedCredits, setCompletedCredits] = useState('18.0');
+  const [gpa, setGpa] = useState('3.50');
+  const [type, setType] = useState<'Regular' | 'Retake' | 'Improvement' | 'Backlog'>('Regular');
+  const [documentName, setDocumentName] = useState('Fall2025_GradeSheet_Signed.pdf');
+  const [successNotice, setSuccessNotice] = useState(false);
 
-export const StudentPreviousResults: React.FC<StudentPreviousResultsProps> = ({
-  isDarkMode = true
-}) => {
-  const { student, previousResults, submitPreviousResult } = useApp();
-
-  const cardStyle = isDarkMode
-    ? 'bg-[#101726] border-[#1d273a] shadow-lg backdrop-blur-xl'
-    : 'bg-white border-slate-200 shadow-sm text-slate-800';
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [semesterName, setSemesterName] = useState('6th Semester (Spring 2026)');
-  const [inputSgpa, setInputSgpa] = useState('3.50');
-  const [inputCredits, setInputCredits] = useState('18');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const studentResults = previousResults.filter((r) => r.studentId === student.id);
-
-  const handleAddSubmission = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitPreviousResult(semesterName, parseFloat(inputSgpa), parseInt(inputCredits));
-    setToastMessage('Submitted for faculty transcript verification! Status: PENDING');
-    setTimeout(() => {
-      setToastMessage(null);
-      setModalOpen(false);
-    }, 1500);
+    submitPreviousResult({
+      studentId: currentUser.studentId || '241-115-211',
+      studentName: currentUser.name,
+      semesterName,
+      completedCredits: parseFloat(completedCredits) || 18.0,
+      gpa: parseFloat(gpa) || 3.50,
+      type,
+      documentName,
+      remarks: 'Self-submitted grade certificate awaiting advisor verification.'
+    });
+    setShowModal(false);
+    setSuccessNotice(true);
+    setTimeout(() => setSuccessNotice(false), 4000);
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold">Previous Semester Transcripts</h2>
-          <p className="text-xs opacity-70">
-            Historical GPA progression, course-wise transcripts, and official verification audit pipeline.
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Previous Semester Results & Retake Submissions
+          </h2>
+          <p className="text-xs text-slate-400">
+            Submit backlog/retake GPA certificates for faculty verification and institutional CGPA updates
           </p>
         </div>
+
         <button
-          onClick={() => setModalOpen(true)}
-          className="py-2 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start md:self-auto cursor-pointer"
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all w-fit"
         >
-          <span className="material-symbols-outlined text-base">upload_file</span>
-          <span>Submit Past Semester Result</span>
+          <Plus className="w-4 h-4" />
+          <span>Submit Result Claim</span>
         </button>
       </div>
 
-      {/* Official CGPA Consistency Banner */}
-      <div className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${cardStyle}`}>
-        <div>
-          <span className="text-xs uppercase font-bold text-slate-400">
-            Official Cumulative CGPA
-          </span>
-          <div className="text-3xl font-extrabold text-white mt-1 tabular-nums">
-            {student.cgpa.toFixed(2)}
+      {successNotice && (
+        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-3 text-xs animate-in fade-in">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div>
+            <span className="font-bold">Submission Dispatched to Faculty Verification Desk!</span>
+            <p className="text-[11px] text-emerald-200">Your course advisor (Dr. Tariqul Islam) will inspect the grade slip in their verification queue.</p>
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">
-            Audited from {studentResults.filter((r) => r.status === 'VERIFIED').length} verified semester terms ({student.totalCredits} Credits)
-          </span>
         </div>
-        <div className="bg-[#141b2c] border border-[#1e283d] p-3.5 rounded-xl max-w-md text-xs text-slate-300">
-          <p className="font-semibold text-cyan-400 mb-1">Audit Policy (Section 4.3):</p>
-          <p className="text-slate-400 text-[11px] leading-relaxed">
-            CGPA includes strictly official and verified historical semesters. Unverified records remain in PENDING status until faculty advisor verification.
+      )}
+
+      {/* Historical GPA Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase">Cumulative CGPA</p>
+          <p className="text-2xl font-black text-white">{currentUser.cgpa || 3.42} <span className="text-xs font-normal text-slate-400">/ 4.00</span></p>
+          <p className="text-[10px] text-indigo-400">Verified by Academic Registrar</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase">Total Credits Earned</p>
+          <p className="text-2xl font-black text-emerald-400">62.5 Cr</p>
+          <p className="text-[10px] text-slate-500">Degree Requirement: 148.0 Cr</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+          <p className="text-xs text-slate-400 font-semibold uppercase">Pending Claims</p>
+          <p className="text-2xl font-black text-amber-400">
+            {previousResults.filter(p => p.status === 'PENDING').length}
           </p>
+          <p className="text-[10px] text-slate-500">Awaiting faculty signature</p>
         </div>
       </div>
 
-      {/* Semesters Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {studentResults.map((s) => (
-          <div key={s.id} className={`p-5 rounded-2xl border space-y-3.5 ${cardStyle}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-cyan-400">{s.semesterName}</span>
-              <span
-                className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold uppercase ${
-                  s.status === 'VERIFIED'
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                    : s.status === 'PENDING'
-                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                }`}
-              >
-                {s.status}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-2xl font-extrabold text-white tabular-nums">
-                {s.sgpa.toFixed(2)}{' '}
-                <span className="text-xs font-normal opacity-60">SGPA</span>
-              </span>
-              <span className="text-xs opacity-70 font-semibold">{s.creditsCompleted} Credits</span>
-            </div>
-            {s.verifiedBy && (
-              <div className="pt-2 border-t border-[#1a2336] text-[11px] text-slate-400">
-                Verified by {s.verifiedBy} ({s.verifiedAt})
-              </div>
-            )}
-            {s.rejectionReason && (
-              <div className="pt-2 border-t border-[#1a2336] text-[11px] text-rose-400">
-                {s.rejectionReason}
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Result Submissions Table */}
+      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th className="px-5 py-3.5">Semester & Category</th>
+                <th className="px-5 py-3.5">Credits</th>
+                <th className="px-5 py-3.5">GPA Achieved</th>
+                <th className="px-5 py-3.5">Submitted Document</th>
+                <th className="px-5 py-3.5">Advisor Verification</th>
+                <th className="px-5 py-3.5 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              {previousResults.map(res => (
+                <tr key={res.id} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-white text-sm">{res.semesterName}</p>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 mt-1 inline-block">
+                      {res.type} Submission
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 font-mono font-bold text-slate-200">
+                    {res.completedCredits} Cr
+                  </td>
+                  <td className="px-5 py-4 font-mono font-extrabold text-sm text-emerald-400">
+                    {res.gpa.toFixed(2)}
+                  </td>
+                  <td className="px-5 py-4 text-slate-400 font-mono text-[11px]">
+                    {res.documentName}
+                  </td>
+                  <td className="px-5 py-4">
+                    {res.verifiedBy ? (
+                      <div>
+                        <p className="font-semibold text-slate-200 text-xs">{res.verifiedBy}</p>
+                        <p className="text-[10px] text-slate-500">{res.verificationDate}</p>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-amber-400 italic">Pending Advisor Approval</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <StatusBadge status={res.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal to Submit Past Semester Result */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#101726] border border-[#232f48] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Submit Past Semester Transcript</h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
+      {/* Submission Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h3 className="font-bold text-white text-base">Submit Previous Semester Result</h3>
             <p className="text-xs text-slate-400">
-              Submit your published SGPA and credit total for faculty advisor verification.
+              Upload retake or backlog grade sheet for verification by Academic Coordinator Dr. Tariqul Islam.
             </p>
-            <form onSubmit={handleAddSubmission} className="space-y-4">
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                  SEMESTER NAME
-                </label>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Semester Name & Session</label>
                 <input
                   type="text"
-                  required
                   value={semesterName}
-                  onChange={(e) => setSemesterName(e.target.value)}
-                  className="w-full bg-[#141b2c] border border-[#222d44] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
+                  onChange={e => setSemesterName(e.target.value)}
+                  required
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                    OBTAINED SGPA
-                  </label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Earned Credits</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={completedCredits}
+                    onChange={e => setCompletedCredits(e.target.value)}
+                    required
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Semester SGPA</label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     max="4"
+                    value={gpa}
+                    onChange={e => setGpa(e.target.value)}
                     required
-                    value={inputSgpa}
-                    onChange={(e) => setInputSgpa(e.target.value)}
-                    className="w-full bg-[#141b2c] border border-[#222d44] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                    TOTAL CREDITS
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    required
-                    value={inputCredits}
-                    onChange={(e) => setInputCredits(e.target.value)}
-                    className="w-full bg-[#141b2c] border border-[#222d44] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
               </div>
+
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                  TRANSCRIPT DOCUMENT (PDF)
-                </label>
-                <div className="border-2 border-dashed border-[#232f48] rounded-xl p-4 text-center text-xs text-slate-400">
-                  <span className="material-symbols-outlined text-3xl text-slate-500 block mb-1">
-                    description
-                  </span>
-                  <span>Transcript_Scan_Copy.pdf attached</span>
-                </div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Submission Category</label>
+                <select
+                  value={type}
+                  onChange={e => setType(e.target.value as any)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="Regular">Regular Semester</option>
+                  <option value="Retake">Retake Course</option>
+                  <option value="Improvement">Grade Improvement</option>
+                  <option value="Backlog">Backlog Examination</option>
+                </select>
               </div>
-              {toastMessage && (
-                <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 text-emerald-200 rounded-xl text-xs font-semibold">
-                  {toastMessage}
-                </div>
-              )}
-              <div className="flex items-center justify-end gap-3 pt-2">
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Attached Grade Sheet PDF Name</label>
+                <input
+                  type="text"
+                  value={documentName}
+                  onChange={e => setDocumentName(e.target.value)}
+                  required
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer shadow-md"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
                 >
-                  Submit for Review
+                  Submit for Approval
                 </button>
               </div>
             </form>

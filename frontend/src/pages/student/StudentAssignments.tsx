@@ -1,256 +1,195 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { downloadAssignmentPDF, generateAssignmentHTML } from '../../utils/pdfGenerator';
-import { PDFDocumentModal } from '../../components/common/PDFDocumentModal';
-import { Download, Eye, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  FileCheck2,
+  Upload,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Paperclip,
+  FileText
+} from 'lucide-react';
 
-interface StudentAssignmentsProps {
-  isDarkMode?: boolean;
-  themeColor?: string;
-}
-
-export const StudentAssignments: React.FC<StudentAssignmentsProps> = ({
-  isDarkMode = true,
-  themeColor = 'cyan'
-}) => {
-  const { assignments, submissions, submitAssignment, student } = useApp();
-
-  const [modalOpen, setModalOpen] = useState(false);
+export const StudentAssignments: React.FC = () => {
+  const { assignments, submitAssignment, setPdfModalDoc } = useApp();
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'SUBMITTED' | 'GRADED'>('ALL');
   const [selectedAsgId, setSelectedAsgId] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState('');
-  const [submittedSuccess, setSubmittedSuccess] = useState(false);
-  const [downloadToast, setDownloadToast] = useState<string | null>(null);
+  const [uploadFileName, setUploadFileName] = useState('');
 
-  // PDF Preview Modal state
-  const [previewPdfModal, setPreviewPdfModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    documentRef: string;
-    documentType: 'ASSIGNMENT' | 'NOTICE';
-    htmlContent: string;
-    filename: string;
-  }>({
-    isOpen: false,
-    title: '',
-    documentRef: '',
-    documentType: 'ASSIGNMENT',
-    htmlContent: '',
-    filename: ''
+  const filtered = assignments.filter(a => {
+    if (activeFilter === 'ALL') return true;
+    return a.status === activeFilter;
   });
 
-  const studentSubmissions = submissions.filter((s) => s.studentId === student.id);
-
-  const handleOpenModal = (asgId: string, courseCode: string) => {
-    setSelectedAsgId(asgId);
-    setUploadedFileName(`Fathin_241115211_${courseCode}_Deliverable.pdf`);
-    setModalOpen(true);
-  };
-
-  const handleConfirmSubmit = () => {
-    if (selectedAsgId) {
-      submitAssignment(selectedAsgId, uploadedFileName, '2.4 MB');
-    }
-    setSubmittedSuccess(true);
-    setTimeout(() => {
-      setSubmittedSuccess(false);
-      setModalOpen(false);
-    }, 1200);
-  };
-
-  const handleDownloadPDF = (asg: (typeof assignments)[0]) => {
-    setDownloadToast(`Downloading ${asg.attachmentName || asg.title}...`);
-    setTimeout(() => setDownloadToast(null), 2500);
-    downloadAssignmentPDF({
-      id: asg.id,
-      courseCode: asg.courseCode,
-      courseName: asg.courseName,
-      title: asg.title,
-      description: asg.description,
-      teacherName: asg.teacherName,
-      dueDate: asg.dueDate,
-      totalMarks: asg.totalMarks,
-      attachmentName: asg.attachmentName
-    });
-  };
-
-  const handlePreviewPDF = (asg: (typeof assignments)[0]) => {
-    const html = generateAssignmentHTML({
-      id: asg.id,
-      courseCode: asg.courseCode,
-      courseName: asg.courseName,
-      title: asg.title,
-      description: asg.description,
-      teacherName: asg.teacherName,
-      dueDate: asg.dueDate,
-      totalMarks: asg.totalMarks,
-      attachmentName: asg.attachmentName
-    });
-
-    setPreviewPdfModal({
-      isOpen: true,
-      title: `${asg.courseCode}: ${asg.title}`,
-      documentRef: `MU/CSE/ASG/${asg.courseCode.replace(/\s+/g, '')}`,
-      documentType: 'ASSIGNMENT',
-      htmlContent: html,
-      filename: `Assignment_${asg.courseCode.replace(/\s+/g, '_')}_${asg.id}.pdf`
-    });
+  const handleUploadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAsgId || !uploadFileName.trim()) return;
+    submitAssignment(selectedAsgId, uploadFileName);
+    setSelectedAsgId(null);
+    setUploadFileName('');
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-cyan-400">task</span>
-            <span>Assignment Submission Hub</span>
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Assignment Hub & Submissions
           </h2>
           <p className="text-xs text-slate-400">
-            Download official question papers and rubrics in PDF format, and upload assignment deliverables.
+            Coursework deliverables, grading rubrics, and faculty evaluations
           </p>
         </div>
-        {downloadToast && (
-          <div className="p-2.5 px-4 rounded-xl bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 text-xs font-bold animate-pulse">
-            {downloadToast}
-          </div>
-        )}
-      </div>
 
-      {/* Grid of Assignments */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {assignments.map((item) => {
-          const submission = studentSubmissions.find((s) => s.assignmentId === item.id);
-          const isSubmitted = !!submission;
-          const status = submission?.status || 'PENDING';
-
-          return (
-            <div
-              key={item.id}
-              className="bg-[#101726] p-5 rounded-2xl border border-[#1d273a] shadow-md space-y-3.5 flex flex-col justify-between"
+        {/* Filter Pills */}
+        <div className="flex p-1 bg-slate-900 border border-slate-800 rounded-xl">
+          {(['ALL', 'PENDING', 'SUBMITTED', 'GRADED'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveFilter(tab)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeFilter === tab
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
             >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-cyan-400">{item.courseCode}</span>
-                  <StatusBadge status={status} />
-                </div>
-                <h3 className="text-sm font-bold text-white tracking-tight">{item.title}</h3>
-                <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-sm text-rose-400">schedule</span>
-                  <span>Deadline: {item.dueDate}</span>
-                </p>
-                <div className="p-2.5 rounded-xl bg-[#090f1d] border border-[#1a2336] text-xs text-slate-400 space-y-1">
-                  <div className="flex justify-between font-mono text-[11px]">
-                    <span>Total Marks:</span>
-                    <strong className="text-white">{item.totalMarks} Marks</strong>
-                  </div>
-                  {submission && (
-                    <div className="text-[11px] text-emerald-400 font-semibold">
-                      Submitted: {submission.fileName}
-                      {submission.marksObtained !== undefined && (
-                        <span className="text-white ml-1 font-bold">
-                          &bull; Score: {submission.marksObtained}/{item.totalMarks}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action buttons: Download Assignment PDF + Preview PDF + Submit */}
-              <div className="space-y-2 pt-2 border-t border-[#1a2336]">
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadPDF(item)}
-                    className="py-2 px-2.5 rounded-xl bg-[#141d30] hover:bg-[#1a2640] text-sky-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 border border-sky-500/25 transition-all cursor-pointer shadow-sm"
-                    title="Directly save/download assignment specification PDF"
-                  >
-                    <Download className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Download PDF</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handlePreviewPDF(item)}
-                    className="py-2 px-2.5 rounded-xl bg-[#151d32] hover:bg-[#1c2948] text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700/50 transition-all cursor-pointer"
-                    title="Preview official assignment brief & print"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Preview & Print</span>
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => handleOpenModal(item.id, item.courseCode)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-cyan-600/20"
-                >
-                  <span className="material-symbols-outlined text-base">upload_file</span>
-                  <span>{isSubmitted ? 'Re-upload Solution' : 'Submit Deliverable'}</span>
-                </button>
-              </div>
-            </div>
-          );
-        })}
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Upload Simulation Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#101726] p-6 rounded-2xl border border-[#232f48] max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">
-                Upload Assignment Deliverable
-              </h3>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-            <div className="border-2 border-dashed border-[#232f48] p-6 rounded-xl text-center space-y-2 bg-[#090f1d]">
-              <span className="material-symbols-outlined text-3xl text-cyan-400">cloud_upload</span>
-              <p className="text-xs text-slate-300">File Selected: {uploadedFileName}</p>
-              <span className="text-[10px] text-slate-500 block font-mono">
-                PDF, DOCX, ZIP up to 10MB
-              </span>
-            </div>
-            {submittedSuccess ? (
-              <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 text-emerald-200 text-xs font-bold rounded-xl text-center">
-                Deliverable submitted successfully!
+      {/* Assignment Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map(asg => (
+          <div
+            key={asg.id}
+            className="rounded-2xl border border-slate-800 bg-[#111827] p-5 flex flex-col justify-between space-y-4 hover:border-slate-700 transition-all shadow-lg"
+          >
+            <div className="space-y-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                  {asg.courseCode}
+                </span>
+                <StatusBadge status={asg.status} size="sm" />
               </div>
-            ) : (
-              <div className="flex items-center justify-end gap-2 pt-2">
+
+              <h3 className="font-extrabold text-white text-base leading-snug">
+                {asg.title}
+              </h3>
+
+              <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                {asg.description}
+              </p>
+            </div>
+
+            {/* Evaluation and Feedback Section */}
+            {asg.status === 'GRADED' && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 space-y-1 text-xs">
+                <div className="flex justify-between font-bold">
+                  <span>Score Awarded:</span>
+                  <span className="font-mono text-sm">{asg.obtainedScore} / {asg.totalPoints} pts</span>
+                </div>
+                {asg.facultyFeedback && (
+                  <p className="text-[11px] text-emerald-200/90 italic flex items-center gap-1.5 mt-1">
+                    <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                    <span>"{asg.facultyFeedback}"</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Submission metadata */}
+            <div className="pt-3 border-t border-slate-800 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Due: {asg.dueDate}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {asg.status === 'PENDING' ? (
+                  <button
+                    onClick={() => {
+                      setSelectedAsgId(asg.id);
+                      setUploadFileName(`Submission_${asg.courseCode.replace(/\s+/g, '')}_241115211.pdf`);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Deliverable</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() =>
+                      setPdfModalDoc({
+                        title: asg.title,
+                        category: asg.courseCode,
+                        content: `ASSIGNMENT SPECIFICATION & RECEIPT\nCourse: ${asg.courseCode} - ${asg.courseTitle}\nAssignment: ${asg.title}\nDue Date: ${asg.dueDate}\nStatus: ${asg.status}\nSubmitted File: ${asg.submittedFileName || 'N/A'}\nAwarded Score: ${asg.obtainedScore || 'Pending Grading'}/${asg.totalPoints}\n\nTeacher Feedback:\n${asg.facultyFeedback || 'Evaluation under faculty review.'}`
+                      })
+                    }
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>View Receipt</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Upload Submission Modal */}
+      {selectedAsgId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h3 className="font-bold text-white text-base">Upload Assignment Document</h3>
+            <p className="text-xs text-slate-400">
+              Submit your lab report, project zip, or written assignment PDF.
+            </p>
+
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Document / Archive File Name:
+                </label>
+                <input
+                  type="text"
+                  value={uploadFileName}
+                  onChange={e => setUploadFileName(e.target.value)}
+                  required
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center text-slate-400 space-y-2">
+                <Upload className="w-8 h-8 text-indigo-400 mx-auto" />
+                <p className="text-xs font-semibold text-slate-300">Drag & drop submission file here</p>
+                <p className="text-[10px] text-slate-500">Supports PDF, ZIP, DOCX up to 25 MB</p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white cursor-pointer"
+                  onClick={() => setSelectedAsgId(null)}
+                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
-                  type="button"
-                  onClick={handleConfirmSubmit}
-                  className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold cursor-pointer shadow-md"
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
                 >
-                  Submit File
+                  Confirm & Submit
                 </button>
               </div>
-            )}
+            </form>
           </div>
         </div>
       )}
-      {/* PDF Document Preview & Print Modal */}
-      <PDFDocumentModal
-        isOpen={previewPdfModal.isOpen}
-        onClose={() => setPreviewPdfModal((prev) => ({ ...prev, isOpen: false }))}
-        title={previewPdfModal.title}
-        documentRef={previewPdfModal.documentRef}
-        documentType={previewPdfModal.documentType}
-        htmlContent={previewPdfModal.htmlContent}
-        filename={previewPdfModal.filename}
-      />
     </div>
   );
 };
