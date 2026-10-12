@@ -1,6 +1,6 @@
 # EduPulse — Academic Performance & Monitoring Platform
 ### Metropolitan University &bull; Department of Computer Science & Engineering
-**Team Delta (CSE 58th Batch):** Raiyan Chowdhury (241-115-210), Fathin Sadman (241-115-211), Md Al Mekdad Ajmol (241-115-223)
+**Team Delta (CSE 60th Batch):** Raiyan Chowdhury (241-115-210), Fathin Sadman (241-115-211), Md Al Mekdad Ajmol (241-115-223)
 
 ---
 
@@ -44,10 +44,17 @@ npm run dev
 API runs on `http://localhost:5000`.
 
 ---
+🎯 Current Milestone: Weeks 1–5
+✅ Week 1: Problem Definition & Early Warning Academic Rules
+✅ Week 2: Responsive Design System & Metropolitan University Theming
+✅ Week 3: Student Academic Dashboard, SGPA/CGPA Telemetry & Red Alert Status
+✅ Week 4: Student Features — QR Scanner, Routine Tracker, Assignment & Slide Downloads, Notice Board, Co-Curricular Activities & Skills
+✅ Week 5: Teacher Panel UI & Admin Dashboard UI
 
-## 🎯 Current Milestone: Weeks 1–4 Complete
-- ✅ **Week 1:** Problem Definition & Early Warning Academic Rules
-- ✅ **Week 2:** Responsive Design System & Metropolitan University Theming
-- ✅ **Week 3:** Student Academic Dashboard, SGPA/CGPA Telemetry & Red Alert Status
-- ✅ **Week 4:** QR Scanner, Routine Tracker, Assignment & Slide Downloads, Notice Board, Co-Curricular & Skills
-- 🔜 **Week 5–8:** Teacher Module (Live QR Generator, Marks Entry) & Admin Console
+🔜 Upcoming Milestones: Weeks 6–12
+Week 6: Database Design & MySQL Setup
+Week 7: Backend Development — Express APIs, Authentication & Role-Based Access Control (RBAC)
+Week 8: Teacher Module — Live QR Attendance Generator, Attendance Management & Marks Entry
+Week 9: Admin Console — Student, Teacher, Course & Semester Management, Results & Early Warning APIs
+Week 10: Frontend–Backend Integration — Connect Student, Teacher & Admin Modules with the Database
+Week 11: Full System Testing, Bug Fixing & Security Testing
