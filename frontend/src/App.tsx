@@ -39,13 +39,23 @@ import { AdminCoursesCrud } from './pages/admin/AdminCoursesCrud';
 import { AdminInstructorsCrud } from './pages/admin/AdminInstructorsCrud';
 import { AdminStudentsCrud } from './pages/admin/AdminStudentsCrud';
 import { AdminCourseAllocation } from './pages/admin/AdminCourseAllocation';
+import { AdminAccountApprovals } from './pages/admin/AdminAccountApprovals';
+import { AdminWeek6DatabaseStudio } from './pages/admin/AdminWeek6DatabaseStudio';
+import { UnauthorizedAccessScreen } from './components/common/UnauthorizedAccessScreen';
+import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen';
 
 export const App: React.FC = () => {
-  const { isAuthenticated, activeTab } = useApp();
+  const { isAuthenticated, pendingApprovalUser, activeTab, currentUser, isTabAllowedForRole } = useApp();
+
+  if (pendingApprovalUser) {
+    return <PendingApprovalScreen />;
+  }
 
   if (!isAuthenticated) {
     return <AuthScreen />;
   }
+
+  const isAllowed = isTabAllowedForRole(activeTab, currentUser.role);
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -99,6 +109,8 @@ export const App: React.FC = () => {
       // Admin
       case 'admin-dashboard':
         return <AdminDashboard />;
+      case 'admin-approvals':
+        return <AdminAccountApprovals />;
       case 'admin-departments':
         return <AdminDepartmentsCrud />;
       case 'admin-semesters':
@@ -111,6 +123,9 @@ export const App: React.FC = () => {
         return <AdminStudentsCrud />;
       case 'admin-allocations':
         return <AdminCourseAllocation />;
+      case 'admin-database':
+      case 'admin-week6-db':
+        return <AdminWeek6DatabaseStudio />;
 
       default:
         return <StudentDashboard />;
@@ -123,7 +138,7 @@ export const App: React.FC = () => {
       <div className="flex-1 flex flex-col md:flex-row">
         <Sidebar />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
-          {renderActiveView()}
+          {isAllowed ? renderActiveView() : <UnauthorizedAccessScreen attemptedTab={activeTab} />}
         </main>
       </div>
       <Footer />

@@ -24,11 +24,13 @@ export const AdminDashboard: React.FC = () => {
     semesters,
     instructors,
     studentsRegistry,
-    courseAllocations
+    courseAllocations,
+    registeredUsers
   } = useApp();
 
   const activeSemester = semesters.find(s => s.isActive) || semesters[0];
   const totalStudents = departments.reduce((sum, d) => sum + d.studentCount, 0);
+  const pendingApprovals = registeredUsers?.filter(u => u.status === 'PENDING') || [];
 
   return (
     <div className="space-y-6">
@@ -50,15 +52,22 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <button
+              onClick={() => setActiveTab('admin-approvals')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Account Approvals {pendingApprovals.length > 0 && `(${pendingApprovals.length})`}</span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin-allocations')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
             >
               <GitBranch className="w-4 h-4" />
               <span>Course Allocations</span>
             </button>
             <button
               onClick={() => setActiveTab('admin-students')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5" />
               <span>Students Registry</span>
@@ -66,6 +75,35 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Pending Account Approvals Notice Banner if any */}
+      {pendingApprovals.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <UserCheck className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white flex items-center gap-2">
+                <span>{pendingApprovals.length} New Registration Request(s) Awaiting Approval</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 uppercase">
+                  Action Required
+                </span>
+              </p>
+              <p className="text-xs text-amber-200/80 mt-0.5">
+                New user access requests have been submitted via Google OAuth and Institutional Registration. Administrator approval is required before portal access is activated.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('admin-approvals')}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          >
+            <span>Review & Approve ({pendingApprovals.length})</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Week 5 Admin Core Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -113,6 +151,34 @@ export const AdminDashboard: React.FC = () => {
           University Configuration Desks (CRUD)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            onClick={() => setActiveTab('admin-approvals')}
+            className={`p-5 rounded-2xl border cursor-pointer transition-all space-y-2 group shadow-md ${
+              pendingApprovals.length > 0
+                ? 'border-amber-500/40 bg-amber-500/10 hover:border-amber-500/60'
+                : 'border-slate-800 bg-[#111827] hover:border-purple-500/40 hover:bg-purple-950/10'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`p-2.5 rounded-xl ${
+                pendingApprovals.length > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-purple-500/20 text-purple-400'
+              }`}>
+                <UserCheck className="w-5 h-5" />
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                pendingApprovals.length > 0 ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {pendingApprovals.length > 0 ? `${pendingApprovals.length} PENDING APPROVAL` : 'ALL CLEAR'}
+              </span>
+            </div>
+            <h4 className="font-bold text-white text-sm group-hover:text-amber-300">
+              Account Approval Desk
+            </h4>
+            <p className="text-xs text-slate-400">
+              Review and approve Google and institutional user sign-ups before allowing student, teacher, or admin portal entry.
+            </p>
+          </div>
+
           <div
             onClick={() => setActiveTab('admin-departments')}
             className="p-5 rounded-2xl border border-slate-800 bg-[#111827] hover:border-purple-500/40 hover:bg-purple-950/10 cursor-pointer transition-all space-y-2 group shadow-md"

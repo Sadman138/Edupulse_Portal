@@ -7,13 +7,17 @@ import {
   Trash2,
   CheckCircle2,
   Calendar,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { SemesterItem } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminSemestersCrud: React.FC = () => {
-  const { semesters, addSemester, updateSemester, deleteSemester, setActiveSemester } = useApp();
+  const { semesters, addSemester, bulkAddSemesters, updateSemester, deleteSemester, setActiveSemester } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [editingSem, setEditingSem] = useState<SemesterItem | null>(null);
 
   const [name, setName] = useState('');
@@ -84,13 +88,23 @@ export const AdminSemestersCrud: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Academic Session</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 transition-all w-fit cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import / Export (CSV)</span>
+          </button>
+
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Academic Session</span>
+          </button>
+        </div>
       </div>
 
       {/* Semesters Table */}
@@ -261,6 +275,43 @@ export const AdminSemestersCrud: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Register Semesters & Academic Sessions via CSV"
+        sampleFilename="Semesters_Sessions_Template.csv"
+        sampleCsvContent={`name,sessionCode,startDate,endDate,maxCredits,enrollmentDeadline,isActive
+Spring 2027,SP27,2027-01-10,2027-05-25,21.0,2027-01-20,false
+Summer 2027,SU27,2027-06-01,2027-09-15,15.0,2027-06-10,false
+Fall 2027,F27,2027-10-01,2028-02-15,21.0,2027-10-10,false`}
+        expectedHeaders={['name', 'sessioncode', 'startdate', 'enddate', 'maxcredits', 'enrollmentdeadline', 'isactive']}
+        columnGuide={[
+          { key: 'name', description: 'Semester Name', required: true, example: 'Fall 2026' },
+          { key: 'sessionCode', description: 'Session Code', required: true, example: 'F26' },
+          { key: 'startDate', description: 'Start Date (YYYY-MM-DD)', required: true, example: '2026-07-01' },
+          { key: 'endDate', description: 'End Date (YYYY-MM-DD)', required: true, example: '2026-11-30' },
+          { key: 'maxCredits', description: 'Max Credits Limit', required: false, example: '21.0' },
+          { key: 'enrollmentDeadline', description: 'Enrollment Deadline', required: false, example: '2026-07-15' },
+          { key: 'isActive', description: 'Active Session (true/false)', required: false, example: 'false' }
+        ]}
+        exportData={semesters}
+        exportFilename="University_Semesters_Sessions.csv"
+        onImport={(importedRows) => {
+          const formatted = importedRows.map(row => ({
+            name: row.name || 'New Semester',
+            sessionCode: row.sessionCode || 'SES',
+            startDate: row.startDate || '2026-01-01',
+            endDate: row.endDate || '2026-05-30',
+            maxCredits: parseFloat(row.maxCredits) || 21.0,
+            enrollmentDeadline: row.enrollmentDeadline || '2026-01-15',
+            isActive: row.isActive === 'true'
+          }));
+          bulkAddSemesters(formatted);
+          return { success: true, count: formatted.length };
+        }}
+      />
     </div>
   );
 };

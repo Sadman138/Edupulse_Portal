@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Zap,
-  ChevronDown,
   Sun,
   Moon,
   Palette,
-  Layout,
   AlignLeft,
   Columns,
-  Grid
+  Lock,
+  LogOut,
+  ShieldCheck,
+  User
 } from 'lucide-react';
-import { PRESET_ACCENTS } from '../../theme/epTheme';
 
 export const Header: React.FC = () => {
   const {
     currentUser,
-    switchRole,
+    logout,
     setIsThemeModalOpen,
     setIsSwitchAccountModalOpen,
     theme,
     updateTheme
   } = useApp();
-
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   const getPortalCode = () => {
     if (currentUser.role === 'TEACHER') return currentUser.employeeId || 'FAC-CSE-042';
@@ -61,61 +59,24 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Portal Badge with Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0d1627] hover:bg-[#121e35] border border-cyan-500/30 text-xs font-semibold text-slate-300 transition-all shadow-inner"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-bold text-cyan-400 uppercase tracking-wide">
-              {currentUser.role} PORTAL
-            </span>
-            <span className="text-slate-500">•</span>
-            <span className="font-mono text-slate-300 text-[11px]">{getPortalCode()}</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-300 flex items-center gap-1">
-              Switch Portal <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </span>
-          </button>
-
-          {/* Quick Portal Switcher Dropdown */}
-          {roleDropdownOpen && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 rounded-2xl bg-[#0f172a] border border-slate-700/80 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95">
-              <button
-                onClick={() => { switchRole('STUDENT'); setRoleDropdownOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  currentUser.role === 'STUDENT' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                <span>Student Portal</span>
-                <span className="text-[10px] text-slate-500 font-mono">241-115-211</span>
-              </button>
-              <button
-                onClick={() => { switchRole('TEACHER'); setRoleDropdownOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  currentUser.role === 'TEACHER' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                <span>Teacher Portal</span>
-                <span className="text-[10px] text-slate-500 font-mono">FAC-CSE-042</span>
-              </button>
-              <button
-                onClick={() => { switchRole('ADMIN'); setRoleDropdownOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  currentUser.role === 'ADMIN' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                <span>Admin Console</span>
-                <span className="text-[10px] text-slate-500 font-mono">REGISTRAR</span>
-              </button>
-            </div>
-          )}
+        {/* Center: Portal Badge - Strictly Locked to Role */}
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0d1627] border border-cyan-500/30 text-xs font-semibold text-slate-300 shadow-inner">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-bold text-cyan-400 uppercase tracking-wide">
+            {currentUser.role} PORTAL
+          </span>
+          <span className="text-slate-500">•</span>
+          <span className="font-mono text-slate-300 text-[11px]">{getPortalCode()}</span>
+          <span className="text-slate-500 hidden sm:inline">•</span>
+          <span className="hidden sm:inline-flex text-emerald-400 items-center gap-1 text-[11px] font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            <Lock className="w-3 h-3 text-emerald-400" />
+            <span>Role Locked</span>
+          </span>
         </div>
 
         {/* Right Controls Bar */}
-        <div className="flex items-center gap-2.5">
-          {/* Layout density toggles [F] [T] [=] */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Layout density toggles [F] [T] */}
           <div className="hidden lg:flex items-center bg-[#0d1627] rounded-xl border border-slate-800 p-0.5">
             <button
               onClick={() => updateTheme({ sidebarPosition: 'left' })}
@@ -153,7 +114,7 @@ export const Header: React.FC = () => {
             </div>
             <button
               onClick={() => setIsThemeModalOpen(true)}
-              className="text-[11px] font-bold text-slate-300 hover:text-white pl-1 flex items-center gap-1 border-l border-slate-700/80"
+              className="text-[11px] font-bold text-slate-300 hover:text-white pl-1 flex items-center gap-1 border-l border-slate-700/80 cursor-pointer"
             >
               <Palette className="w-3 h-3 text-cyan-400" />
               <span>Colors</span>
@@ -164,7 +125,7 @@ export const Header: React.FC = () => {
           <button
             onClick={() => updateTheme({ mode: theme.mode === 'dark' ? 'light' : 'dark' })}
             title="Toggle Light/Dark Theme"
-            className="p-2 rounded-xl bg-[#0d1627] hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800 transition-colors"
+            className="p-2 rounded-xl bg-[#0d1627] hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800 transition-colors cursor-pointer"
           >
             {theme.mode === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />
@@ -173,26 +134,46 @@ export const Header: React.FC = () => {
             )}
           </button>
 
-          {/* User Profile Badge from Screenshot */}
+          {/* User Profile Badge (Click to view account security & details) */}
           <div
             onClick={() => setIsSwitchAccountModalOpen(true)}
+            title="View Account Profile & Role Security"
             className="flex items-center gap-2.5 pl-2 border-l border-slate-800 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              {getInitials()}
-            </div>
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-8 h-8 rounded-full object-cover border border-cyan-500/50 group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+                {getInitials()}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
               <p className="text-xs font-bold text-white leading-tight group-hover:text-cyan-300 transition-colors">
                 {currentUser.name}
               </p>
-              <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider leading-tight flex items-center gap-0.5">
+              <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider leading-tight flex items-center gap-1">
                 <span>{currentUser.role}</span>
-                <ChevronDown className="w-3 h-3 text-cyan-400" />
+                <ShieldCheck className="w-3 h-3 text-cyan-400" />
               </p>
             </div>
           </div>
+
+          {/* Direct Log Out Button */}
+          <button
+            onClick={logout}
+            title="Log Out (Switch User)"
+            className="p-2 rounded-xl bg-[#0d1627] hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>
   );
 };
+
+export default Header;

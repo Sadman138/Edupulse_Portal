@@ -2,12 +2,17 @@ export type UserRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
 
 export type RiskLevel = 'SAFE' | 'WARNING' | 'CRITICAL';
 
+export type AccountStatus = 'APPROVED' | 'PENDING' | 'REJECTED';
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  status?: AccountStatus;
   avatarUrl?: string;
+  authProvider?: 'GOOGLE' | 'EMAIL';
+  googleId?: string;
   department: string;
   departmentName: string;
   institution: string;
@@ -28,6 +33,22 @@ export interface UserProfile {
   // Admin specific
   adminDesignation?: string;
   permissions?: string[];
+}
+
+export interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  authProvider: 'GOOGLE' | 'EMAIL';
+  status: AccountStatus;
+  password?: string;
+  studentId?: string;
+  employeeId?: string;
+  department?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+  rejectionReason?: string;
 }
 
 export interface Course {

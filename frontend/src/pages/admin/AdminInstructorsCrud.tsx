@@ -8,13 +8,17 @@ import {
   Mail,
   Phone,
   School,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { InstructorItem } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminInstructorsCrud: React.FC = () => {
-  const { instructors, addInstructor, updateInstructor, deleteInstructor, departments } = useApp();
+  const { instructors, addInstructor, bulkAddInstructors, updateInstructor, deleteInstructor, departments } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [editingInst, setEditingInst] = useState<InstructorItem | null>(null);
 
   const [employeeId, setEmployeeId] = useState('');
@@ -90,13 +94,22 @@ export const AdminInstructorsCrud: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Faculty Member</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import (CSV)</span>
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Faculty Member</span>
+          </button>
+        </div>
       </div>
 
       {/* Instructors Table */}
@@ -277,6 +290,57 @@ export const AdminInstructorsCrud: React.FC = () => {
           </div>
         </div>
       )}
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Register Faculty Members via CSV"
+        sampleFilename="Instructors_Directory_Template.csv"
+        sampleCsvContent={`employeeId,name,designation,department,email,phone,status
+FAC-CSE-051,Dr. Anisur Rahman,Professor,CSE,anisur.cse@metrouni.edu.bd,+880 1712-345678,Active
+FAC-CSE-052,Ms. Nusrat Jahan,Assistant Professor,CSE,nusrat.cse@metrouni.edu.bd,+880 1813-456789,Active
+FAC-EEE-031,Engr. Kamrul Hasan,Lecturer,EEE,kamrul.eee@metrouni.edu.bd,+880 1914-567890,Active
+FAC-BBA-021,Dr. Samira Khan,Associate Professor,BBA,samira.bba@metrouni.edu.bd,+880 1615-678901,Active`}
+        expectedHeaders={['employeeid', 'name', 'designation', 'department', 'email', 'phone', 'status']}
+        columnGuide={[
+          { key: 'employeeId', description: 'Faculty Institutional Code (e.g. FAC-CSE-051)', required: true, example: 'FAC-CSE-051' },
+          { key: 'name', description: 'Full Official Faculty Name', required: true, example: 'Dr. Anisur Rahman' },
+          { key: 'designation', description: 'Academic Rank: Professor, Associate Professor, Assistant Professor, Lecturer', required: true, example: 'Professor' },
+          { key: 'department', description: 'Academic Department Code', required: true, example: 'CSE' },
+          { key: 'email', description: 'Official Institutional Email', example: 'anisur.cse@metrouni.edu.bd' },
+          { key: 'phone', description: 'Faculty Phone Number', example: '+880 1712-345678' },
+          { key: 'status', description: 'Faculty Status: Active, On Leave, Sabbatical', example: 'Active' }
+        ]}
+        exportData={instructors}
+        exportFilename="University_Faculty_Directory.csv"
+        onImport={(parsedRows) => {
+          const newInsts = parsedRows.map(row => {
+            const rawDesig = row['designation'] || 'Assistant Professor';
+            const validDesig: InstructorItem['designation'] =
+              rawDesig.toLowerCase().includes('assoc')
+                ? 'Associate Professor'
+                : rawDesig.toLowerCase().includes('prof')
+                ? 'Professor'
+                : rawDesig.toLowerCase().includes('lect')
+                ? 'Lecturer'
+                : 'Assistant Professor';
+
+            return {
+              employeeId: row['employeeid'] || `FAC-${(row['department'] || 'CSE').toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+              name: row['name'] || 'Faculty Member',
+              designation: validDesig,
+              department: (row['department'] || 'CSE').toUpperCase(),
+              email: row['email'] || `${(row['name'] || 'fac').toLowerCase().replace(/\s+/g, '.')}@metrouni.edu.bd`,
+              phone: row['phone'] || '+880 1700-000000',
+              status: (row['status'] as any) || 'Active',
+              coursesAllocatedCount: 0
+            };
+          });
+
+          bulkAddInstructors(newInsts);
+          return { success: true, count: newInsts.length };
+        }}
+      />
     </div>
   );
 };

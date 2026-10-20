@@ -1,121 +1,143 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { DEMO_USERS } from '../../data/mockData';
-import { UserRole } from '../../types';
-import { X, GraduationCap, School, ShieldCheck, Check } from 'lucide-react';
+import {
+  X,
+  GraduationCap,
+  School,
+  ShieldCheck,
+  Lock,
+  LogOut,
+  Mail,
+  Building,
+  UserCheck,
+  CheckCircle2
+} from 'lucide-react';
 
 export const SwitchAccountModal: React.FC = () => {
-  const { isSwitchAccountModalOpen, setIsSwitchAccountModalOpen, currentUser, switchRole } = useApp();
+  const { isSwitchAccountModalOpen, setIsSwitchAccountModalOpen, currentUser, logout } = useApp();
 
   if (!isSwitchAccountModalOpen) return null;
 
-  const accounts = [
-    {
-      role: 'STUDENT' as UserRole,
-      title: 'Student Portal',
-      user: DEMO_USERS.student,
-      icon: GraduationCap,
-      badge: 'Academic Student',
-      color: 'from-blue-600/30 to-indigo-600/20 border-blue-500/30 text-blue-400',
-      description: 'Course registration, SGPA/CGPA, Dynamic QR scanner, attendance & assignments.'
-    },
-    {
-      role: 'TEACHER' as UserRole,
-      title: 'Faculty / Teacher Console',
-      user: DEMO_USERS.teacher,
-      icon: School,
-      badge: 'Faculty Member',
-      color: 'from-emerald-600/30 to-teal-600/20 border-emerald-500/30 text-emerald-400',
-      description: 'Dynamic QR attendance generator, manual roster, CSV grade entry, verification desk & risk alerts.'
-    },
-    {
-      role: 'ADMIN' as UserRole,
-      title: 'University Admin Console',
-      user: DEMO_USERS.admin,
-      icon: ShieldCheck,
-      badge: 'Academic Registrar',
-      color: 'from-purple-600/30 to-pink-600/20 border-purple-500/30 text-purple-400',
-      description: 'Institutional KPI metrics, CRUD for Departments, Semesters, Courses, Instructors, Students & Allocations.'
-    }
-  ];
+  const getRoleIcon = () => {
+    if (currentUser.role === 'TEACHER') return School;
+    if (currentUser.role === 'ADMIN') return ShieldCheck;
+    return GraduationCap;
+  };
 
-  const handleSelect = (role: UserRole) => {
-    switchRole(role);
+  const RoleIcon = getRoleIcon();
+
+  const handleLogoutAndSwitch = () => {
     setIsSwitchAccountModalOpen(false);
+    logout();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-[#111827] border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg bg-[#0d1527] border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#162032]">
-          <div>
-            <h3 className="font-semibold text-white text-base">Switch Role / Demo Persona</h3>
-            <p className="text-xs text-slate-400">Instantly test Student, Teacher, or Admin capabilities</p>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#090f1d]">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-base">Account Security & Role Scope</h3>
+              <p className="text-[11px] text-slate-400">Metropolitan University • EduPulse Access Control</p>
+            </div>
           </div>
           <button
             onClick={() => setIsSwitchAccountModalOpen(false)}
-            className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Roles List */}
-        <div className="p-6 space-y-3">
-          {accounts.map(acc => {
-            const isCurrent = currentUser.role === acc.role;
-            const Icon = acc.icon;
-            return (
-              <div
-                key={acc.role}
-                onClick={() => handleSelect(acc.role)}
-                className={`relative flex items-start gap-4 p-4 rounded-xl border bg-gradient-to-r cursor-pointer transition-all ${
-                  acc.color
-                } ${
-                  isCurrent
-                    ? 'ring-2 ring-indigo-500 border-indigo-400 shadow-lg'
-                    : 'hover:border-slate-500 hover:scale-[1.01]'
-                }`}
-              >
-                <div className="p-3 rounded-xl bg-slate-900/80 border border-white/10 shrink-0">
-                  <Icon className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                      {acc.title}
-                      {isCurrent && (
-                        <span className="text-[10px] bg-indigo-500 text-white font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Check className="w-3 h-3 stroke-[3]" /> ACTIVE
-                        </span>
-                      )}
-                    </h4>
-                    <span className="text-xs font-medium text-slate-300 bg-slate-900/60 px-2 py-0.5 rounded border border-white/10">
-                      {acc.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs font-semibold text-indigo-300 mt-0.5">
-                    {acc.user.name} <span className="text-slate-400 font-normal">({acc.user.email})</span>
-                  </p>
-                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{acc.description}</p>
-                </div>
+        {/* Current Active Account Profile */}
+        <div className="p-6 space-y-4">
+          <div className="p-4 rounded-2xl bg-[#111c33] border border-cyan-500/30 flex items-start gap-4">
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-14 h-14 rounded-2xl object-cover border border-cyan-400 shrink-0 shadow-md"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500 text-slate-950 font-black text-lg flex items-center justify-center shadow-md shrink-0">
+                <RoleIcon className="w-7 h-7" />
               </div>
-            );
-          })}
+            )}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-bold text-white text-base truncate">{currentUser.name}</h4>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                  {currentUser.role}
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-1">
+                <Mail className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-mono">{currentUser.email}</span>
+              </p>
+
+              <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400">
+                <span className="font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  {currentUser.role === 'STUDENT'
+                    ? `ID: ${currentUser.studentId || '241-115-211'}`
+                    : currentUser.role === 'TEACHER'
+                    ? `EMP: ${currentUser.employeeId || 'FAC-CSE-042'}`
+                    : `ADMIN: ${currentUser.employeeId || 'REG-ADMIN-01'}`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Building className="w-3 h-3 text-slate-500" />
+                  <span>Dept: {currentUser.department || 'CSE'}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Strict Role Isolation Notice */}
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 space-y-2">
+            <div className="flex items-center gap-2 text-rose-300 font-bold text-xs">
+              <Lock className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Strict Role-Based Access Isolation:</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              University security policy strictly isolates portals:
+            </p>
+            <ul className="text-[11px] text-slate-400 space-y-1 list-disc pl-5">
+              <li><strong>Student:</strong> Cannot access Teacher Console or Administrator Panel.</li>
+              <li><strong>Teacher:</strong> Cannot access Student Portal or Administrator Panel.</li>
+              <li><strong>Admin:</strong> Cannot access Student or Teacher operational desks.</li>
+            </ul>
+            <p className="text-[11px] text-cyan-300 font-medium pt-1">
+              To enter a different role (Teacher, Admin, or Student), please log out from this account and sign in with the appropriate credentials.
+            </p>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-800 bg-[#162032] flex items-center justify-between text-xs text-slate-400">
-          <span>Metropolitan University • EduPulse Auth Guard</span>
+        {/* Footer with Logout action */}
+        <div className="px-6 py-4 border-t border-slate-800 bg-[#090f1d] flex items-center justify-between">
           <button
             onClick={() => setIsSwitchAccountModalOpen(false)}
-            className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
-            Cancel
+            Stay Signed In
+          </button>
+
+          <button
+            onClick={handleLogoutAndSwitch}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/25 transition-all cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Log Out to Switch Role</span>
           </button>
         </div>
       </div>
     </div>
   );
 };
+
+export default SwitchAccountModal;

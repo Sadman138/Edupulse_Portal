@@ -9,13 +9,17 @@ import {
   Search,
   Filter,
   GraduationCap,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { StudentRegistryItem } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminStudentsCrud: React.FC = () => {
-  const { studentsRegistry, addStudentToRegistry, updateStudentInRegistry, deleteStudentFromRegistry, departments } = useApp();
+  const { studentsRegistry, addStudentToRegistry, bulkAddStudents, updateStudentInRegistry, deleteStudentFromRegistry, departments } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentRegistryItem | null>(null);
   const [search, setSearch] = useState('');
 
@@ -115,13 +119,22 @@ export const AdminStudentsCrud: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Register New Student</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import (CSV)</span>
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Register New Student</span>
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -337,6 +350,64 @@ export const AdminStudentsCrud: React.FC = () => {
           </div>
         </div>
       )}
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Register Students via CSV"
+        sampleFilename="Student_Registry_Template.csv"
+        sampleCsvContent={`studentId,name,department,batch,currentSemester,cgpa,attendance,riskLevel,email,phone,status
+241-115-301,Adnan Sami,CSE,59th Batch,5th Semester,3.65,88.5,SAFE,adnan.cse@metrouni.edu.bd,+880 1711-223344,Active
+241-115-302,Sadia Afrin,CSE,59th Batch,5th Semester,3.82,92.0,SAFE,sadia.cse@metrouni.edu.bd,+880 1812-334455,Active
+241-115-303,Rakib Hassan,CSE,58th Batch,6th Semester,2.15,64.0,CRITICAL,rakib.cse@metrouni.edu.bd,+880 1913-445566,Probation`}
+        expectedHeaders={['studentid', 'name', 'department', 'batch', 'currentsemester', 'cgpa', 'attendance', 'risklevel', 'email', 'phone', 'status']}
+        columnGuide={[
+          { key: 'studentId', description: 'Institutional Student ID', required: true, example: '241-115-301' },
+          { key: 'name', description: 'Full Legal Student Name', required: true, example: 'Adnan Sami' },
+          { key: 'department', description: 'Department Code (CSE, EEE, BBA)', required: true, example: 'CSE' },
+          { key: 'batch', description: 'Academic Batch Number', example: '59th Batch' },
+          { key: 'currentSemester', description: 'Enrolled Semester Level', example: '5th Semester' },
+          { key: 'cgpa', description: 'Cumulative Grade Point Average (0.00-4.00)', example: '3.65' },
+          { key: 'attendance', description: 'Overall Attendance Percentage (0-100)', example: '88.5' },
+          { key: 'riskLevel', description: 'Academic Risk Status: SAFE, WARNING, or CRITICAL', example: 'SAFE' },
+          { key: 'email', description: 'Student Email Address', example: 'adnan.cse@metrouni.edu.bd' },
+          { key: 'phone', description: 'Contact Phone Number', example: '+880 1711-223344' },
+          { key: 'status', description: 'Enrollment Standing: Active, Probation, Inactive, Graduated', example: 'Active' }
+        ]}
+        exportData={studentsRegistry}
+        exportFilename="University_Students_Registry.csv"
+        onImport={(parsedRows) => {
+          const newStudents = parsedRows.map(row => {
+            const sid = row['studentid'] || `241-115-${Math.floor(300 + Math.random() * 600)}`;
+            const cgpaVal = parseFloat(row['cgpa']) || 3.0;
+            const attVal = parseFloat(row['attendance']) || 80.0;
+            const rawRisk = (row['risklevel'] || '').toUpperCase();
+            const risk: 'SAFE' | 'WARNING' | 'CRITICAL' =
+              rawRisk === 'CRITICAL' || attVal < 75 || cgpaVal < 2.5
+                ? 'CRITICAL'
+                : rawRisk === 'WARNING' || attVal < 80 || cgpaVal < 2.75
+                ? 'WARNING'
+                : 'SAFE';
+
+            return {
+              studentId: sid,
+              name: row['name'] || 'New Student',
+              department: (row['department'] || 'CSE').toUpperCase(),
+              batch: row['batch'] || '59th Batch',
+              currentSemester: row['currentsemester'] || '5th Semester',
+              cgpa: cgpaVal,
+              attendance: attVal,
+              riskLevel: risk,
+              email: row['email'] || `${sid.replace(/-/g, '')}@metrouni.edu.bd`,
+              phone: row['phone'] || '+880 1700-000000',
+              status: (row['status'] as any) || (risk === 'CRITICAL' ? 'Probation' : 'Active')
+            };
+          });
+
+          bulkAddStudents(newStudents);
+          return { success: true, count: newStudents.length };
+        }}
+      />
     </div>
   );
 };

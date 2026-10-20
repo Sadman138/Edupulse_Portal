@@ -10,14 +10,18 @@ import {
   AlertCircle,
   CheckCircle2,
   Filter,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { CourseAllocationItem } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminCourseAllocation: React.FC = () => {
   const {
     courseAllocations,
     addCourseAllocation,
+    bulkAddCourseAllocations,
     deleteCourseAllocation,
     adminCourses,
     instructors,
@@ -25,6 +29,7 @@ export const AdminCourseAllocation: React.FC = () => {
   } = useApp();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('ALL');
 
   // Allocation Form states
@@ -75,13 +80,23 @@ export const AdminCourseAllocation: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Allocate New Course</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 transition-all w-fit cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import / Export (CSV)</span>
+          </button>
+
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Allocate New Course</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Conflict Status Bar */}
@@ -259,6 +274,49 @@ export const AdminCourseAllocation: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Assign Course Allocations via CSV"
+        sampleFilename="Course_Allocations_Template.csv"
+        sampleCsvContent={`courseCode,courseTitle,instructorName,department,semester,section,day,timeSlot,room
+CSE 311,Database Management Systems,Dr. Tariqul Islam,CSE,5th Semester,Section A,Sunday & Wednesday,09:00 AM - 10:30 AM,Room 402
+CSE 313,Operating Systems & Concurrency,Dr. Fahim Ahmed,CSE,5th Semester,Section B,Monday & Thursday,11:00 AM - 12:30 PM,Room 405
+EEE 211,Signals and Systems,Engr. Hasan Ali,EEE,3rd Semester,Section A,Sunday & Wednesday,01:30 PM - 03:00 PM,Lab 3`}
+        expectedHeaders={['coursecode', 'coursetitle', 'instructorname', 'department', 'semester', 'section', 'day', 'timeslot', 'room']}
+        columnGuide={[
+          { key: 'courseCode', description: 'Course Code', required: true, example: 'CSE 311' },
+          { key: 'courseTitle', description: 'Course Title', required: true, example: 'Database Management Systems' },
+          { key: 'instructorName', description: 'Instructor Name', required: true, example: 'Dr. Tariqul Islam' },
+          { key: 'department', description: 'Department Code', required: true, example: 'CSE' },
+          { key: 'semester', description: 'Academic Semester', required: true, example: '5th Semester' },
+          { key: 'section', description: 'Section', required: true, example: 'Section A' },
+          { key: 'day', description: 'Class Days', required: true, example: 'Sunday & Wednesday' },
+          { key: 'timeSlot', description: 'Time Slot', required: true, example: '09:00 AM - 10:30 AM' },
+          { key: 'room', description: 'Room / Lab', required: true, example: 'Room 402' }
+        ]}
+        exportData={courseAllocations}
+        exportFilename="University_Course_Allocations.csv"
+        onImport={(importedRows) => {
+          const formatted: Omit<CourseAllocationItem, 'id'>[] = importedRows.map(row => ({
+            courseId: `crs-${Date.now()}`,
+            courseCode: row.courseCode || 'CSE 100',
+            courseTitle: row.courseTitle || 'Foundations of Computing',
+            instructorId: `inst-${Date.now()}`,
+            instructorName: row.instructorName || 'Faculty Instructor',
+            department: row.department || 'CSE',
+            semester: row.semester || '5th Semester',
+            section: row.section || 'Section A',
+            day: row.day || 'Sunday & Wednesday',
+            timeSlot: row.timeSlot || '09:00 AM - 10:30 AM',
+            room: row.room || 'Room 301'
+          }));
+          bulkAddCourseAllocations(formatted);
+          return { success: true, count: formatted.length };
+        }}
+      />
     </div>
   );
 };

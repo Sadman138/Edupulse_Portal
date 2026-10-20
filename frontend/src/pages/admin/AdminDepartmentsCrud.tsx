@@ -8,13 +8,17 @@ import {
   Mail,
   Users,
   Calendar,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { DepartmentItem } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminDepartmentsCrud: React.FC = () => {
-  const { departments, addDepartment, updateDepartment, deleteDepartment } = useApp();
+  const { departments, addDepartment, bulkAddDepartments, updateDepartment, deleteDepartment } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<DepartmentItem | null>(null);
 
   // Form states
@@ -90,13 +94,22 @@ export const AdminDepartmentsCrud: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Department</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import (CSV)</span>
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Department</span>
+          </button>
+        </div>
       </div>
 
       {/* Departments Table */}
@@ -266,6 +279,45 @@ export const AdminDepartmentsCrud: React.FC = () => {
           </div>
         </div>
       )}
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Register Departments via CSV"
+        sampleFilename="Departments_Template.csv"
+        sampleCsvContent={`code,name,chairPerson,facultyCount,studentCount,establishedYear,email
+CSE,Computer Science & Engineering,Prof. Dr. Tariqul Islam,28,620,2003,cse@metrouni.edu.bd
+EEE,Electrical & Electronic Engineering,Dr. Mahbubur Rahman,18,340,2005,eee@metrouni.edu.bd
+BBA,Business Administration,Prof. Dr. Nazmul Huda,22,510,2003,bba@metrouni.edu.bd
+ENG,Department of English,Dr. Rehana Begum,14,290,2007,english@metrouni.edu.bd
+LAW,Department of Law & Justice,Barrister Fazle Rabbi,12,210,2010,law@metrouni.edu.bd`}
+        expectedHeaders={['code', 'name', 'chairperson', 'facultycount', 'studentcount', 'establishedyear', 'email']}
+        columnGuide={[
+          { key: 'code', description: 'Department Code Abbreviation (e.g. CSE, EEE)', required: true, example: 'CSE' },
+          { key: 'name', description: 'Full Official Department Title', required: true, example: 'Computer Science & Engineering' },
+          { key: 'chairPerson', description: 'Head of Department / Department Chair', required: true, example: 'Prof. Dr. Tariqul Islam' },
+          { key: 'facultyCount', description: 'Total Faculty Members', example: '28' },
+          { key: 'studentCount', description: 'Total Enrolled Students', example: '620' },
+          { key: 'establishedYear', description: 'Foundation Year', example: '2003' },
+          { key: 'email', description: 'Department Contact Email', example: 'cse@metrouni.edu.bd' }
+        ]}
+        exportData={departments}
+        exportFilename="University_Departments.csv"
+        onImport={(parsedRows) => {
+          const newDepts = parsedRows.map(row => ({
+            code: (row['code'] || 'NEW').toUpperCase(),
+            name: row['name'] || 'New Academic Department',
+            chairPerson: row['chairperson'] || 'Department Chair',
+            facultyCount: parseInt(row['facultycount']) || 15,
+            studentCount: parseInt(row['studentcount']) || 300,
+            establishedYear: parseInt(row['establishedyear']) || 2020,
+            email: row['email'] || `${(row['code'] || 'dept').toLowerCase()}@metrouni.edu.bd`
+          }));
+
+          bulkAddDepartments(newDepts);
+          return { success: true, count: newDepts.length };
+        }}
+      />
     </div>
   );
 };

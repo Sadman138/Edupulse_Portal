@@ -5,13 +5,17 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X
+  X,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { Course } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const AdminCoursesCrud: React.FC = () => {
-  const { adminCourses, addCourse, updateCourse, deleteCourse, departments } = useApp();
+  const { adminCourses, addCourse, bulkAddCourses, updateCourse, deleteCourse, departments } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
   const [code, setCode] = useState('');
@@ -82,13 +86,22 @@ export const AdminCoursesCrud: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Course</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            <span>Bulk Import (CSV)</span>
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Course</span>
+          </button>
+        </div>
       </div>
 
       {/* Courses Table */}
@@ -250,6 +263,44 @@ export const AdminCoursesCrud: React.FC = () => {
           </div>
         </div>
       )}
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        title="Bulk Register Courses via CSV"
+        sampleFilename="Courses_Catalog_Template.csv"
+        sampleCsvContent={`code,title,credits,department,type,semester
+CSE311,Database Management Systems,3.0,CSE,Theory,Spring 2026
+CSE312,Database Management Systems Lab,1.5,CSE,Lab,Spring 2026
+CSE321,Software Engineering & Design,3.0,CSE,Theory,Spring 2026
+CSE401,Artificial Intelligence & Expert Systems,3.0,CSE,Theory,Spring 2026
+EEE201,Electrical Circuits & Machines,3.0,EEE,Theory,Spring 2026`}
+        expectedHeaders={['code', 'title', 'credits', 'department', 'type', 'semester']}
+        columnGuide={[
+          { key: 'code', description: 'Course Code (e.g. CSE311)', required: true, example: 'CSE311' },
+          { key: 'title', description: 'Official Course Title', required: true, example: 'Database Management Systems' },
+          { key: 'credits', description: 'Credit Hours (1.0 - 4.0)', required: true, example: '3.0' },
+          { key: 'department', description: 'Offering Academic Department', required: true, example: 'CSE' },
+          { key: 'type', description: 'Course Format: Theory or Lab', example: 'Theory' },
+          { key: 'semester', description: 'Target Academic Semester', example: 'Spring 2026' }
+        ]}
+        exportData={adminCourses}
+        exportFilename="University_Courses_Catalog.csv"
+        onImport={(parsedRows) => {
+          const newCourses = parsedRows.map(row => ({
+            code: (row['code'] || 'CSE000').toUpperCase(),
+            title: row['title'] || 'New Academic Course',
+            credits: parseFloat(row['credits']) || 3.0,
+            department: (row['department'] || 'CSE').toUpperCase(),
+            type: (row['type']?.toLowerCase() === 'lab' ? 'Lab' : 'Theory') as 'Theory' | 'Lab',
+            semester: row['semester'] || 'Spring 2026',
+            section: 'A'
+          }));
+
+          bulkAddCourses(newCourses);
+          return { success: true, count: newCourses.length };
+        }}
+      />
     </div>
   );
 };

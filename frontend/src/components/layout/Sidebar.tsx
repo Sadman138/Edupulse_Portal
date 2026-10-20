@@ -21,11 +21,14 @@ import {
   UserCheck,
   UserPlus,
   GitBranch,
-  ShieldCheck
+  ShieldCheck,
+  Lock,
+  Database
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const { currentUser, activeTab, setActiveTab, theme, highRiskAlerts } = useApp();
+  const { currentUser, activeTab, setActiveTab, theme, highRiskAlerts, registeredUsers } = useApp();
+  const pendingApprovalsCount = registeredUsers?.filter(u => u.status === 'PENDING').length || 0;
 
   interface NavItem {
     id: string;
@@ -76,12 +79,20 @@ export const Sidebar: React.FC = () => {
   // Admin Nav
   const adminNav: NavItem[] = [
     { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    {
+      id: 'admin-approvals',
+      label: 'Account Approvals',
+      icon: UserCheck,
+      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+      badgeColor: 'bg-amber-500 text-slate-950 font-black'
+    },
     { id: 'admin-departments', label: 'Departments (CRUD)', icon: Building },
     { id: 'admin-semesters', label: 'Semesters (CRUD)', icon: CalendarDays },
     { id: 'admin-courses', label: 'Courses Catalog', icon: BookMarked },
     { id: 'admin-instructors', label: 'Faculty Directory', icon: UserCheck },
     { id: 'admin-students', label: 'Students Registry', icon: UserPlus },
-    { id: 'admin-allocations', label: 'Course Allocations', icon: GitBranch }
+    { id: 'admin-allocations', label: 'Course Allocations', icon: GitBranch },
+    { id: 'admin-database', label: 'Database & Schema Engine', icon: Database }
   ];
 
   let currentNav = teacherNav;
@@ -129,12 +140,13 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-[#080d1a] border-r border-slate-800/90 p-4 flex flex-col justify-between shrink-0 min-h-[calc(100vh-62px)] select-none">
       <div className="space-y-4">
-        {/* Top CONSOLE SCOPE card from Screenshot */}
+        {/* Top CONSOLE SCOPE card */}
         <div className="px-4 py-3 rounded-2xl bg-[#0d1627] border border-slate-800/90 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
-              CONSOLE SCOPE
-            </p>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-slate-400">
+              <Lock className="w-3 h-3 text-emerald-400" />
+              <span>ROLE LOCKED</span>
+            </div>
             <p className="text-xs font-bold text-white mt-0.5">
               {scopeTitle}
             </p>

@@ -11,12 +11,11 @@ import {
   FileText
 } from 'lucide-react';
 import { AssessmentRecord } from '../../types';
+import { CsvImportExportModal } from '../../components/common/CsvImportExportModal';
 
 export const TeacherAssessmentEntry: React.FC = () => {
   const { assessmentRecords, updateAssessmentRecord, bulkImportAssessments } = useApp();
   const [showCsvModal, setShowCsvModal] = useState(false);
-  const [csvText, setCsvText] = useState('');
-  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   // Download sample template
   const handleDownloadSampleCsv = () => {
@@ -47,66 +46,6 @@ export const TeacherAssessmentEntry: React.FC = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-  };
-
-  // Parse CSV text and import
-  const handleParseAndImport = (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const lines = csvText.trim().split("\n");
-      if (lines.length < 2) {
-        setImportStatus('CSV must have a header line and at least one student record.');
-        return;
-      }
-      const newRecords: AssessmentRecord[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].split(",").map(p => p.trim().replace(/^"|"$/g, ''));
-        if (parts.length >= 8) {
-          const q1 = parseFloat(parts[3]) || 0;
-          const q2 = parseFloat(parts[4]) || 0;
-          const mid = parseFloat(parts[5]) || 0;
-          const asg = parseFloat(parts[6]) || 0;
-          const fin = parseFloat(parts[7]) || 0;
-          const total = q1 + q2 + mid + asg + fin;
-          let letterGrade = 'F';
-          let gpa = 0.0;
-          if (total >= 80) { letterGrade = 'A+'; gpa = 4.0; }
-          else if (total >= 75) { letterGrade = 'A'; gpa = 3.75; }
-          else if (total >= 70) { letterGrade = 'A-'; gpa = 3.50; }
-          else if (total >= 65) { letterGrade = 'B+'; gpa = 3.25; }
-          else if (total >= 60) { letterGrade = 'B'; gpa = 3.00; }
-          else if (total >= 55) { letterGrade = 'B-'; gpa = 2.75; }
-          else if (total >= 50) { letterGrade = 'C+'; gpa = 2.50; }
-          else if (total >= 45) { letterGrade = 'C'; gpa = 2.25; }
-          else if (total >= 40) { letterGrade = 'D'; gpa = 2.00; }
-
-          newRecords.push({
-            studentId: parts[0],
-            studentName: parts[1],
-            rollNumber: parts[2],
-            quiz1: q1,
-            quiz2: q2,
-            midterm: mid,
-            assignment: asg,
-            finalExam: fin,
-            total,
-            letterGrade,
-            gpa
-          });
-        }
-      }
-
-      if (newRecords.length > 0) {
-        bulkImportAssessments(newRecords);
-        setShowCsvModal(false);
-        setCsvText('');
-        setImportStatus(null);
-      } else {
-        setImportStatus('Could not parse any valid student records from the CSV.');
-      }
-    } catch (err: any) {
-      setImportStatus('Error parsing CSV: ' + err.message);
-    }
   };
 
   return (
@@ -255,60 +194,72 @@ export const TeacherAssessmentEntry: React.FC = () => {
         </div>
       </div>
 
-      {/* CSV Import Modal */}
-      {showCsvModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="bg-[#111827] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-bold text-white text-base">Bulk CSV Marks Import</h3>
-              <button
-                onClick={handleDownloadSampleCsv}
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:underline"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download Sample Template</span>
-              </button>
-            </div>
+      {/* CSV Bulk Import Modal */}
+      <CsvImportExportModal
+        isOpen={showCsvModal}
+        onClose={() => setShowCsvModal(false)}
+        title="Bulk Import Student Assessment Marks (CSV)"
+        sampleFilename="Assessment_Marks_Template.csv"
+        sampleCsvContent={`studentId,studentName,rollNumber,quiz1,quiz2,midterm,assignment,finalExam
+241-115-211,Fathin Sadman,211,18,19,26,9,35
+241-115-212,Tahsin Ahmed,212,20,18,28,10,36
+241-115-213,Nusrat Jahan,213,12,14,18,7,24
+241-115-214,Shahriar Kabir,214,8,9,11,4,15`}
+        expectedHeaders={['studentid', 'studentname', 'rollnumber', 'quiz1', 'quiz2', 'midterm', 'assignment', 'finalexam']}
+        columnGuide={[
+          { key: 'studentId', description: 'Student Registration ID', required: true, example: '241-115-211' },
+          { key: 'studentName', description: 'Full Name of the Student', required: true, example: 'Fathin Sadman' },
+          { key: 'rollNumber', description: 'Exam Roll Identifier', example: '211' },
+          { key: 'quiz1', description: 'Quiz 1 Marks (Max 20)', example: '18' },
+          { key: 'quiz2', description: 'Quiz 2 Marks (Max 20)', example: '19' },
+          { key: 'midterm', description: 'Midterm Examination (Max 30)', example: '26' },
+          { key: 'assignment', description: 'Continuous Assignment / Term Project (Max 10)', example: '9' },
+          { key: 'finalExam', description: 'Semester Final Examination (Max 40)', example: '35' }
+        ]}
+        exportData={assessmentRecords}
+        exportFilename="CSE311_Continuous_Assessment_Marks.csv"
+        onImport={(parsedRows) => {
+          const newRecords: AssessmentRecord[] = parsedRows.map(parts => {
+            const q1 = parseFloat(parts['quiz1']) || 0;
+            const q2 = parseFloat(parts['quiz2']) || 0;
+            const mid = parseFloat(parts['midterm']) || 0;
+            const asg = parseFloat(parts['assignment']) || 0;
+            const fin = parseFloat(parts['finalexam']) || 0;
+            const total = q1 + q2 + mid + asg + fin;
+            let letterGrade = 'F';
+            let gpa = 0.0;
+            if (total >= 80) { letterGrade = 'A+'; gpa = 4.0; }
+            else if (total >= 75) { letterGrade = 'A'; gpa = 3.75; }
+            else if (total >= 70) { letterGrade = 'A-'; gpa = 3.50; }
+            else if (total >= 65) { letterGrade = 'B+'; gpa = 3.25; }
+            else if (total >= 60) { letterGrade = 'B'; gpa = 3.00; }
+            else if (total >= 55) { letterGrade = 'B-'; gpa = 2.75; }
+            else if (total >= 50) { letterGrade = 'C+'; gpa = 2.50; }
+            else if (total >= 45) { letterGrade = 'C'; gpa = 2.25; }
+            else if (total >= 40) { letterGrade = 'D'; gpa = 2.00; }
 
-            <p className="text-xs text-slate-400">
-              Paste standard CSV rows below or upload exported spreadsheet data. Columns must match: <code>studentId, studentName, rollNumber, quiz1, quiz2, midterm, assignment, finalExam</code>.
-            </p>
+            return {
+              studentId: parts['studentid'] || `241-115-${Math.floor(200 + Math.random() * 800)}`,
+              studentName: parts['studentname'] || 'Student',
+              rollNumber: parts['rollnumber'] || parts['studentid']?.slice(-3) || '000',
+              quiz1: q1,
+              quiz2: q2,
+              midterm: mid,
+              assignment: asg,
+              finalExam: fin,
+              total,
+              letterGrade,
+              gpa
+            };
+          });
 
-            <form onSubmit={handleParseAndImport} className="space-y-4">
-              <textarea
-                rows={8}
-                placeholder="studentId,studentName,rollNumber,quiz1,quiz2,midterm,assignment,finalExam&#10;241-115-211,Fathin Sadman,211,18,19,26,9,35"
-                value={csvText}
-                onChange={e => setCsvText(e.target.value)}
-                required
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-
-              {importStatus && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
-                  {importStatus}
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCsvModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
-                >
-                  Parse & Import Ledger
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          if (newRecords.length > 0) {
+            bulkImportAssessments(newRecords);
+            return { success: true, count: newRecords.length };
+          }
+          return { success: false, count: 0, error: 'No valid records found in CSV' };
+        }}
+      />
     </div>
   );
 };
