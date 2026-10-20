@@ -14,6 +14,9 @@ This release delivers the complete frontend architecture and feature sets spanni
 - ✅ **Week 4:** Dynamic QR Attendance Scanner UI, previous result submission form with verification tracker, notice board with PDF preview, assignment hub (file uploads & rubrics), study material downloads, co-curricular profile, and class timetable routine.
 - ✅ **Week 5 (Teacher):** Teacher overview dashboard, enrolled student directory with section filters, dynamic QR generator with live 60s countdown timer & manual attendance fallback roster, continuous assessment spreadsheet with instant grade recalculation & bulk CSV import/export, assignment creation & grading desk, notice publishing, study material upload, previous result verification desk, and early warning high-risk student alert desk.
 - ✅ **Week 5 (Admin):** Institutional admin dashboard with metrics (Total Students, Average Attendance, Pass Rate, Active Faculty), full CRUD desks for Departments, Semesters/Sessions, Courses Catalog, Faculty Instructors Directory, and Students Registry, plus an interactive Course Allocation & Schedule screen with conflict detection.
+✅ **Week 6 (MySQL & Firebase Auth Integration):** 
+  - **Firebase Authentication Setup:** Client-side Google OAuth 2.0 and Firebase App configuration for secure user sign-in.
+  - **MySQL Database Integration:** Relational database schema design and connection configuration for user accounts, attendance logs, and academic records persistence.
 
 ---
 
