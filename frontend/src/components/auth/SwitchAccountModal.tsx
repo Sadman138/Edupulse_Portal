@@ -94,6 +94,16 @@ export const SwitchAccountModal: React.FC = () => {
                   <Building className="w-3 h-3 text-slate-500" />
                   <span>Dept: {currentUser.department || 'CSE'}</span>
                 </span>
+                {currentUser.batch && (
+                  <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-mono text-[10px]">
+                    {currentUser.batch}
+                  </span>
+                )}
+                {currentUser.section && (
+                  <span className="px-2 py-0.5 rounded bg-blue-500/20 border border-blue-500/30 text-blue-300 font-mono text-[10px]">
+                    {currentUser.section}
+                  </span>
+                )}
               </div>
             </div>
           </div>

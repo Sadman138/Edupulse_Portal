@@ -23,7 +23,8 @@ import {
   GitBranch,
   ShieldCheck,
   Lock,
-  Database
+  Database,
+  Server
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -92,7 +93,8 @@ export const Sidebar: React.FC = () => {
     { id: 'admin-instructors', label: 'Faculty Directory', icon: UserCheck },
     { id: 'admin-students', label: 'Students Registry', icon: UserPlus },
     { id: 'admin-allocations', label: 'Course Allocations', icon: GitBranch },
-    { id: 'admin-database', label: 'Database & Schema Engine', icon: Database }
+    { id: 'admin-database', label: 'Database & Schema Engine', icon: Database },
+    { id: 'admin-api-studio', label: 'Backend API & RBAC (W7)', icon: Server, badge: 'W7' }
   ];
 
   let currentNav = teacherNav;

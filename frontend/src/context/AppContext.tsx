@@ -67,6 +67,8 @@ interface AppContextType {
       avatarUrl?: string;
       role: UserRole;
       studentId?: string;
+      batch?: string;
+      section?: string;
       employeeId?: string;
       department?: string;
     },
@@ -78,6 +80,8 @@ interface AppContextType {
     role: UserRole;
     password?: string;
     studentId?: string;
+    batch?: string;
+    section?: string;
     employeeId?: string;
     department?: string;
     authProvider: 'GOOGLE' | 'EMAIL';
@@ -213,7 +217,8 @@ const ROLE_ALLOWED_TABS: Record<UserRole, string[]> = {
     'admin-students',
     'admin-allocations',
     'admin-database',
-    'admin-week6-db'
+    'admin-week6-db',
+    'admin-api-studio'
   ]
 };
 
@@ -234,6 +239,8 @@ const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
     status: 'APPROVED',
     password: 'student123',
     studentId: '241-115-211',
+    batch: '61st Batch',
+    section: 'Section A',
     department: 'CSE',
     createdAt: '2026-10-10 09:15 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
@@ -247,6 +254,8 @@ const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
     status: 'APPROVED',
     password: 'student123',
     studentId: '241-115-211',
+    batch: '61st Batch',
+    section: 'Section A',
     department: 'CSE',
     createdAt: '2026-10-10 09:15 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
@@ -259,6 +268,8 @@ const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
     authProvider: 'GOOGLE',
     status: 'APPROVED',
     studentId: '241-115-211',
+    batch: '61st Batch',
+    section: 'Section A',
     department: 'CSE',
     createdAt: '2026-10-10 09:00 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
@@ -376,6 +387,8 @@ const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
     authProvider: 'GOOGLE',
     status: 'PENDING',
     studentId: '241-115-309',
+    batch: '61st Batch',
+    section: 'Section B',
     department: 'CSE',
     createdAt: '2026-10-15 10:20 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&q=80'
@@ -599,6 +612,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'APPROVED',
       authProvider: existing.authProvider,
       studentId: existing.studentId || (effectiveRole === 'STUDENT' ? baseProfile.studentId : undefined),
+      batch: existing.batch || (effectiveRole === 'STUDENT' ? baseProfile.batch || '61st Batch' : undefined),
+      section: existing.section || (effectiveRole === 'STUDENT' ? 'Section A' : undefined),
       employeeId: existing.employeeId || (effectiveRole !== 'STUDENT' ? baseProfile.employeeId : undefined),
       department: existing.department || baseProfile.department,
       avatarUrl: existing.avatarUrl || customProfile?.avatarUrl || baseProfile.avatarUrl,
@@ -623,6 +638,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatarUrl?: string;
       role: UserRole;
       studentId?: string;
+      batch?: string;
+      section?: string;
       employeeId?: string;
       department?: string;
     },
@@ -669,6 +686,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       authProvider: 'GOOGLE',
       status: 'PENDING',
       studentId: googleProfile.studentId || (googleProfile.role === 'STUDENT' ? '241-115-211' : undefined),
+      batch: googleProfile.batch || (googleProfile.role === 'STUDENT' ? '61st Batch' : undefined),
+      section: googleProfile.section || (googleProfile.role === 'STUDENT' ? 'Section A' : undefined),
       employeeId:
         googleProfile.employeeId ||
         (googleProfile.role !== 'STUDENT' ? (googleProfile.role === 'TEACHER' ? 'FAC-CSE-042' : 'REG-ADMIN-01') : undefined),
@@ -696,6 +715,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role: UserRole;
     password?: string;
     studentId?: string;
+    batch?: string;
+    section?: string;
     employeeId?: string;
     department?: string;
     authProvider: 'GOOGLE' | 'EMAIL';
@@ -712,6 +733,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'PENDING',
       password: accountData.password || 'password123',
       studentId: accountData.role === 'STUDENT' ? accountData.studentId || '241-115-211' : undefined,
+      batch: accountData.batch || (accountData.role === 'STUDENT' ? '61st Batch' : undefined),
+      section: accountData.section || (accountData.role === 'STUDENT' ? 'Section A' : undefined),
       employeeId:
         accountData.role !== 'STUDENT'
           ? accountData.employeeId || (accountData.role === 'TEACHER' ? 'FAC-CSE-042' : 'REG-ADMIN-01')

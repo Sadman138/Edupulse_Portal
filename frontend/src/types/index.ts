@@ -19,6 +19,7 @@ export interface UserProfile {
   // Student specific
   studentId?: string;
   batch?: string;
+  section?: string;
   currentSemester?: string;
   cgpa?: number;
   overallAttendance?: number;
@@ -46,6 +47,8 @@ export interface RegisteredUser {
   studentId?: string;
   employeeId?: string;
   department?: string;
+  batch?: string;
+  section?: string;
   avatarUrl?: string;
   createdAt?: string;
   rejectionReason?: string;

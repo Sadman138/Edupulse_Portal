@@ -13,7 +13,9 @@ import {
   GitBranch,
   ArrowRight,
   School,
-  CheckCircle2
+  CheckCircle2,
+  Database,
+  Server
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -273,6 +275,38 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <h4 className="font-bold text-white text-sm group-hover:text-purple-300">Course Allocation Desk</h4>
             <p className="text-xs text-slate-400">Assign course sections, instructors, lecture halls, and detect timetable conflicts.</p>
+          </div>
+
+          <div
+            onClick={() => setActiveTab('admin-database')}
+            className="p-5 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 hover:bg-indigo-900/30 cursor-pointer transition-all space-y-2 group shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <span className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400">
+                <Database className="w-5 h-5" />
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                WEEK 6
+              </span>
+            </div>
+            <h4 className="font-bold text-white text-sm group-hover:text-indigo-300">Database & Schema Engine</h4>
+            <p className="text-xs text-slate-400">Inspect 3NF ERD models, 17 MySQL tables, foreign keys, and run live SQL sandboxes.</p>
+          </div>
+
+          <div
+            onClick={() => setActiveTab('admin-api-studio')}
+            className="p-5 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 hover:bg-cyan-900/30 cursor-pointer transition-all space-y-2 group shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <span className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-400">
+                <Server className="w-5 h-5" />
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">
+                WEEK 7 (NEW)
+              </span>
+            </div>
+            <h4 className="font-bold text-white text-sm group-hover:text-cyan-300">Backend API & RBAC Studio</h4>
+            <p className="text-xs text-slate-400">Interactive REST client, 32-point RBAC permission matrix, JWT claims inspector, and OpenAPI specs.</p>
           </div>
         </div>
       </div>

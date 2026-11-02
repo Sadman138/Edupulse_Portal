@@ -18,6 +18,10 @@ import { GoogleAuthModal } from './GoogleAuthModal';
 import { EmailOtpVerificationModal } from './EmailOtpVerificationModal';
 import { signInWithRealGoogle } from '../../services/firebaseAuth';
 
+const DEPARTMENT_OPTIONS = ['CSE', 'EEE', 'BBA', 'ENG'];
+const BATCH_OPTIONS = ['62nd Batch', '61st Batch', '60th Batch', '59th Batch', '58th Batch'];
+const SECTION_OPTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
+
 export const AuthScreen: React.FC = () => {
   const { login, registerAccount, registeredUsers } = useApp();
 
@@ -30,11 +34,19 @@ export const AuthScreen: React.FC = () => {
   const [password, setPassword] = useState('password123');
   const [idNumber, setIdNumber] = useState('241-115-211');
   const [department, setDepartment] = useState('CSE');
+  const [batch, setBatch] = useState('61st Batch');
+  const [section, setSection] = useState('Section A');
   const [errorMessage, setErrorMessage] = useState('');
 
   // Google Direct Auth State
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleAccessToken, setGoogleAccessToken] = useState<string | undefined>(undefined);
+  const [preloadedGoogleUser, setPreloadedGoogleUser] = useState<{
+    name: string;
+    email: string;
+    photoURL?: string;
+    accessToken?: string;
+  } | null>(null);
 
   // Modals
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
@@ -45,6 +57,8 @@ export const AuthScreen: React.FC = () => {
     role: UserRole;
     password?: string;
     studentId?: string;
+    batch?: string;
+    section?: string;
     employeeId?: string;
     department?: string;
     authProvider: 'GOOGLE' | 'EMAIL';
@@ -73,7 +87,7 @@ export const AuthScreen: React.FC = () => {
 
   /**
    * Direct Real Google Sign In / Sign Up Handler
-   * Triggers official Google OAuth popup
+   * Triggers official Google OAuth popup (works for ANY personal or university Gmail account)
    */
   const handleDirectGoogleAuth = async () => {
     setIsGoogleLoading(true);
@@ -91,39 +105,22 @@ export const AuthScreen: React.FC = () => {
         u => u.email.trim().toLowerCase() === gEmail.trim().toLowerCase()
       );
 
-      if (authMode === 'SIGN_IN') {
-        if (!existing) {
-          // If not registered yet, prompt to create account
-          setErrorMessage(`Google account (${gEmail}) verified! Please select your role (Student / Teacher) and ID to complete registration.`);
-          setFullName(gName);
-          setEmail(gEmail);
-          setAuthMode('SIGN_UP');
-          return;
-        }
-
+      if (existing) {
+        // User already has an account -> log in directly
         const res = login(gEmail, existing.role);
         if (!res.success && !res.pending) {
           setErrorMessage(res.error || 'Google sign-in failed.');
         }
       } else {
-        // Sign-up with Google:
-        // Google has already cryptographically verified their email address!
-        const payload = {
-          name: gName,
+        // New Google account (whether chosen from Sign In or Create Account):
+        // Automatically open the registration modal with this Google profile pre-populated!
+        setPreloadedGoogleUser({
+          name: gName || 'Google User',
           email: gEmail,
-          role: selectedRole,
-          studentId: selectedRole === 'STUDENT' ? idNumber : undefined,
-          employeeId: selectedRole !== 'STUDENT' ? idNumber : undefined,
-          department,
-          authProvider: 'GOOGLE' as const,
-          avatarUrl: gPhoto
-        };
-
-        // Register directly into PENDING approval state (or trigger OTP if desired)
-        const res = registerAccount(payload);
-        if (!res.success && !res.pending) {
-          setErrorMessage(res.error || 'Registration failed.');
-        }
+          photoURL: gPhoto,
+          accessToken
+        });
+        setGoogleModalOpen(true);
       }
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
@@ -137,8 +134,9 @@ export const AuthScreen: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes('@')) {
-      setErrorMessage('Please enter a valid university or personal email address.');
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail.includes('@') || (!cleanEmail.endsWith('@gmail.com') && !cleanEmail.endsWith('@metrouni.edu.bd'))) {
+      setErrorMessage('Security Policy: Only verified Google / Gmail accounts (@gmail.com or @metrouni.edu.bd) are authorized to access EduPulse. Please sign in with Google or enter your valid Gmail address.');
       return;
     }
     setErrorMessage('');
@@ -161,11 +159,13 @@ export const AuthScreen: React.FC = () => {
       // Prepare payload and trigger 6-digit email OTP verification before submitting to pending state!
       const payload = {
         name: fullName.trim(),
-        email: email.trim(),
+        email: cleanEmail,
         role: selectedRole,
         password,
-        studentId: selectedRole === 'STUDENT' ? idNumber : undefined,
-        employeeId: selectedRole !== 'STUDENT' ? idNumber : undefined,
+        studentId: selectedRole === 'STUDENT' ? idNumber.trim() : undefined,
+        batch: selectedRole === 'STUDENT' ? batch : undefined,
+        section: selectedRole === 'STUDENT' ? section : undefined,
+        employeeId: selectedRole !== 'STUDENT' ? idNumber.trim() : undefined,
         department,
         authProvider: 'EMAIL' as const
       };
@@ -382,7 +382,7 @@ export const AuthScreen: React.FC = () => {
 
           <div>
             <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-              Email Address
+              {authMode === 'SIGN_UP' ? 'Gmail / University Email' : 'Email Address'}
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -391,38 +391,122 @@ export const AuthScreen: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                placeholder="name@metrouni.edu.bd or name@gmail.com"
+                placeholder={authMode === 'SIGN_UP' ? 'yourname@gmail.com or name@metrouni.edu.bd' : 'name@metrouni.edu.bd or name@gmail.com'}
                 className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
+            {authMode === 'SIGN_UP' && (
+              <p className="text-[10px] text-slate-400 mt-1">
+                Enter your Gmail to receive the 6-digit confirmation security code.
+              </p>
+            )}
           </div>
 
           {authMode === 'SIGN_UP' && (
-            <div className="grid grid-cols-2 gap-2.5">
+            <>
+              {/* Department Selector (Clickable Buttons) */}
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                  {selectedRole === 'STUDENT' ? 'Student ID' : selectedRole === 'TEACHER' ? 'Faculty ID' : 'Admin Code'}
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                  Select Department:
                 </label>
-                <input
-                  type="text"
-                  value={idNumber}
-                  onChange={e => setIdNumber(e.target.value)}
-                  required
-                  placeholder="e.g. 241-115-211"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-white font-mono"
-                />
+                <div className="grid grid-cols-4 gap-1.5">
+                  {DEPARTMENT_OPTIONS.map(dept => (
+                    <button
+                      key={dept}
+                      type="button"
+                      onClick={() => setDepartment(dept)}
+                      className={`py-2 px-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                        department === dept
+                          ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                          : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                      }`}
+                    >
+                      {dept}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1">Department</label>
-                <input
-                  type="text"
-                  value={department}
-                  onChange={e => setDepartment(e.target.value)}
-                  required
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs text-white uppercase font-mono"
-                />
-              </div>
-            </div>
+
+              {selectedRole === 'STUDENT' ? (
+                <>
+                  {/* Batch Selector (Clickable Buttons) */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                      Select Batch:
+                    </label>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                      {BATCH_OPTIONS.map(b => (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setBatch(b)}
+                          className={`py-2 px-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer truncate ${
+                            batch === b
+                              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                              : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                          }`}
+                        >
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section Selector (Clickable Buttons) */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                      Select Section:
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {SECTION_OPTIONS.map(sec => (
+                        <button
+                          key={sec}
+                          type="button"
+                          onClick={() => setSection(sec)}
+                          className={`py-2 px-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                            section === sec
+                              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                              : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                          }`}
+                        >
+                          {sec}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Student ID */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Student ID Number
+                    </label>
+                    <input
+                      type="text"
+                      value={idNumber}
+                      onChange={e => setIdNumber(e.target.value)}
+                      required
+                      placeholder="e.g. 241-115-211"
+                      className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Teacher ID */
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Faculty / Employee ID Number
+                  </label>
+                  <input
+                    type="text"
+                    value={idNumber}
+                    onChange={e => setIdNumber(e.target.value)}
+                    required
+                    placeholder="e.g. FAC-CSE-042"
+                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <div>
@@ -434,6 +518,7 @@ export const AuthScreen: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
+                placeholder="Minimum 6 characters"
                 className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
@@ -447,15 +532,26 @@ export const AuthScreen: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer"
+            className="w-full py-3.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer"
           >
-            <span>
-              {authMode === 'SIGN_IN'
-                ? `Enter ${selectedRole} Portal`
-                : `Continue Registration as ${selectedRole}`}
-            </span>
-            <ArrowRight className="w-4 h-4" />
+            {authMode === 'SIGN_IN' ? (
+              <>
+                <span>Enter {selectedRole} Portal</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <Mail className="w-4 h-4" />
+                <span>Verify Gmail & Register as {selectedRole}</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
+          {authMode === 'SIGN_UP' && (
+            <p className="text-[10px] text-center text-slate-400">
+              Clicking will dispatch a 6-digit confirmation code to your Gmail to complete registration.
+            </p>
+          )}
         </form>
 
         {/* 1-Click Evaluation & Demo Accounts */}
@@ -541,9 +637,13 @@ export const AuthScreen: React.FC = () => {
       {/* Google Sign In / Sign Up Modal */}
       <GoogleAuthModal
         isOpen={googleModalOpen}
-        onClose={() => setGoogleModalOpen(false)}
+        onClose={() => {
+          setGoogleModalOpen(false);
+          setPreloadedGoogleUser(null);
+        }}
         mode={authMode}
         initialRole={selectedRole}
+        preloadedGoogleUser={preloadedGoogleUser}
       />
 
       {/* Email Verification OTP Modal */}

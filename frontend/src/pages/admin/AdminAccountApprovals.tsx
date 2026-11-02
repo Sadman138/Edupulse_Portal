@@ -338,6 +338,18 @@ export const AdminAccountApprovals: React.FC = () => {
                           <span>Dept: {user.department || 'CSE'}</span>
                         </span>
 
+                        {user.batch && (
+                          <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] font-bold">
+                            {user.batch}
+                          </span>
+                        )}
+
+                        {user.section && (
+                          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-300 font-mono text-[10px] font-bold">
+                            {user.section}
+                          </span>
+                        )}
+
                         {user.createdAt && (
                           <span className="text-[10px] text-slate-500">
                             Registered: {user.createdAt}

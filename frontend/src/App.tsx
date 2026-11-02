@@ -41,6 +41,7 @@ import { AdminStudentsCrud } from './pages/admin/AdminStudentsCrud';
 import { AdminCourseAllocation } from './pages/admin/AdminCourseAllocation';
 import { AdminAccountApprovals } from './pages/admin/AdminAccountApprovals';
 import { AdminWeek6DatabaseStudio } from './pages/admin/AdminWeek6DatabaseStudio';
+import { AdminWeek7ApiStudio } from './pages/admin/AdminWeek7ApiStudio';
 import { UnauthorizedAccessScreen } from './components/common/UnauthorizedAccessScreen';
 import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen';
 
@@ -126,6 +127,8 @@ export const App: React.FC = () => {
       case 'admin-database':
       case 'admin-week6-db':
         return <AdminWeek6DatabaseStudio />;
+      case 'admin-api-studio':
+        return <AdminWeek7ApiStudio />;
 
       default:
         return <StudentDashboard />;

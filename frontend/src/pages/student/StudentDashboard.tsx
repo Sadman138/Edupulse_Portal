@@ -37,7 +37,7 @@ export const StudentDashboard: React.FC = () => {
               Welcome back, {currentUser.name}! 🎓
             </h1>
             <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Student ID: <strong className="text-indigo-300">{currentUser.studentId}</strong> • Batch: <strong className="text-indigo-300">{currentUser.batch}</strong> • Current Session: <strong className="text-indigo-300">{currentUser.currentSemester}</strong>
+              Student ID: <strong className="text-indigo-300">{currentUser.studentId}</strong> • Batch: <strong className="text-indigo-300">{currentUser.batch || '61st Batch'}</strong> • Section: <strong className="text-indigo-300">{currentUser.section || 'Section A'}</strong> • Session: <strong className="text-indigo-300">{currentUser.currentSemester || 'Fall 2026'}</strong>
             </p>
           </div>
 

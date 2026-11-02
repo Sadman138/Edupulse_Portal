@@ -18,6 +18,10 @@ import {
 import { EmailOtpVerificationModal } from './EmailOtpVerificationModal';
 import { signInWithRealGoogle } from '../../services/firebaseAuth';
 
+const DEPARTMENT_OPTIONS = ['CSE', 'EEE', 'BBA', 'ENG'];
+const BATCH_OPTIONS = ['62nd Batch', '61st Batch', '60th Batch', '59th Batch', '58th Batch'];
+const SECTION_OPTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
+
 interface GoogleAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -56,14 +60,18 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   React.useEffect(() => {
     if (preloadedGoogleUser) {
       setRealGoogleUser(preloadedGoogleUser);
+      setFullName(preloadedGoogleUser.name || 'Google User');
     }
   }, [preloadedGoogleUser]);
 
   // Registration Fields
   const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole);
+  const [fullName, setFullName] = useState(preloadedGoogleUser?.name || 'Google User');
   const [studentId, setStudentId] = useState('241-115-211');
   const [employeeId, setEmployeeId] = useState('FAC-CSE-042');
   const [department, setDepartment] = useState('CSE');
+  const [batch, setBatch] = useState('61st Batch');
+  const [section, setSection] = useState('Section A');
 
   // Email OTP verification state
   const [otpModalOpen, setOtpModalOpen] = useState(false);
@@ -73,6 +81,8 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     avatarUrl?: string;
     role: UserRole;
     studentId?: string;
+    batch?: string;
+    section?: string;
     employeeId?: string;
     department?: string;
     accessToken?: string;
@@ -173,11 +183,13 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     setErrorMsg(null);
 
     const payload = {
-      name: realGoogleUser.name,
+      name: fullName.trim() || realGoogleUser.name,
       email: realGoogleUser.email,
       avatarUrl: realGoogleUser.photoURL,
       role: selectedRole,
       studentId: selectedRole === 'STUDENT' ? studentId : undefined,
+      batch: selectedRole === 'STUDENT' ? batch : undefined,
+      section: selectedRole === 'STUDENT' ? section : undefined,
       employeeId: selectedRole !== 'STUDENT' ? employeeId : undefined,
       department: department || 'CSE'
     };
@@ -198,11 +210,13 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     setErrorMsg(null);
 
     const payload = {
-      name: realGoogleUser.name,
+      name: fullName.trim() || realGoogleUser.name,
       email: realGoogleUser.email,
       avatarUrl: realGoogleUser.photoURL,
       role: selectedRole,
       studentId: selectedRole === 'STUDENT' ? studentId : undefined,
+      batch: selectedRole === 'STUDENT' ? batch : undefined,
+      section: selectedRole === 'STUDENT' ? section : undefined,
       employeeId: selectedRole !== 'STUDENT' ? employeeId : undefined,
       department: department || 'CSE',
       accessToken: realGoogleUser.accessToken
@@ -366,21 +380,108 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
                   </div>
                 </div>
 
-                {/* Institutional Identification */}
-                {selectedRole === 'STUDENT' ? (
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Student ID Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 241-115-211"
-                      value={studentId}
-                      onChange={e => setStudentId(e.target.value)}
-                      required
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
+                {/* Full Name */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    required
+                    placeholder="e.g. Fathin Sadman"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Academic Department Selector (Clickable Buttons) */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                    Select Department:
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {DEPARTMENT_OPTIONS.map(dept => (
+                      <button
+                        key={dept}
+                        type="button"
+                        onClick={() => setDepartment(dept)}
+                        className={`py-2 px-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                          department === dept
+                            ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                            : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        {dept}
+                      </button>
+                    ))}
                   </div>
+                </div>
+
+                {/* Role-Specific Fields */}
+                {selectedRole === 'STUDENT' ? (
+                  <>
+                    {/* Batch Selector (Clickable Buttons) */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                        Select Batch:
+                      </label>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                        {BATCH_OPTIONS.map(b => (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => setBatch(b)}
+                            className={`py-1.5 px-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer truncate ${
+                              batch === b
+                                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                                : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Section Selector (Clickable Buttons) */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                        Select Section:
+                      </label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {SECTION_OPTIONS.map(sec => (
+                          <button
+                            key={sec}
+                            type="button"
+                            onClick={() => setSection(sec)}
+                            className={`py-1.5 px-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                              section === sec
+                                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-300 font-black'
+                                : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                            }`}
+                          >
+                            {sec}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Student ID */}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        Student ID Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 241-115-211"
+                        value={studentId}
+                        onChange={e => setStudentId(e.target.value)}
+                        required
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
@@ -392,46 +493,30 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
                       value={employeeId}
                       onChange={e => setEmployeeId(e.target.value)}
                       required
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                 )}
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                    Academic Department
-                  </label>
-                  <select
-                    value={department}
-                    onChange={e => setDepartment(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="CSE">Computer Science & Engineering (CSE)</option>
-                    <option value="EEE">Electrical & Electronic Engineering (EEE)</option>
-                    <option value="BBA">Business Administration</option>
-                    <option value="ENG">Department of English</option>
-                  </select>
-                </div>
 
                 {/* Action buttons */}
                 <div className="space-y-2 pt-1">
                   <button
                     type="button"
-                    onClick={handleDirectRegisterGoogle}
+                    onClick={handleSendVerificationCode}
                     className="w-full py-3.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Complete Registration as {selectedRole}</span>
+                    <Mail className="w-4 h-4" />
+                    <span>Send 6-Digit Verification Code to Gmail</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleSendVerificationCode}
+                    onClick={handleDirectRegisterGoogle}
                     className="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs border border-slate-700 flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Or Verify with 6-Digit Code</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Quick Complete Registration as {selectedRole}</span>
                   </button>
                 </div>
               </div>
