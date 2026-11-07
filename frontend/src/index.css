@@ -1,61 +1,818 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
-    --bg-primary: #0b0f19;
-    --bg-card: #131b2e;
-    --bg-card-secondary: #1a233a;
-    --border-color: #23314f;
-    --text-primary: #f8fafc;
-    --text-muted: #94a3b8;
+    /* Centralized Global Theme Engine Tokens */
+    --color-primary: #10B981;
+    --color-secondary: #06B6D4;
+    --color-background: #080D19;
+    --color-sidebar: #0B1220;
+    --color-card: #172235;
+    --color-card-sub: #1D2B40;
+    --color-card-hover: #1E2F48;
+    --color-border: rgba(16, 185, 129, 0.22);
+    --color-text-primary: #F8FAFC;
+    --color-text-secondary: #94A3B8;
+    --color-gradient-start: #10B981;
+    --color-gradient-end: #06B6D4;
+    --color-glow: rgba(16, 185, 129, 0.35);
+    --color-button: #10B981;
+    --color-button-hover: #059669;
+    --color-input-background: rgba(11, 18, 32, 0.75);
+
+    /* Backwards-compatible mappings */
+    --ep-bg-body: var(--color-background);
+    --ep-bg-card: var(--color-card);
+    --ep-bg-card-sub: var(--color-card-sub);
+    --ep-bg-header: var(--color-sidebar);
+    --ep-bg-sidebar: var(--color-sidebar);
+    --ep-border: var(--color-border);
+    --ep-text-primary: var(--color-text-primary);
+    --ep-text-secondary: var(--color-text-secondary);
+    --ep-accent-color: var(--color-primary);
+    --ep-accent-secondary: var(--color-secondary);
+    --ep-accent-gradient: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
+    --ep-glow: var(--color-glow);
+
+    --bg-primary: var(--color-background);
+    --bg-card: var(--color-card);
+    --bg-card-secondary: var(--color-card-sub);
+    --border-color: var(--color-border);
+    --text-primary: var(--color-text-primary);
+    --text-muted: var(--color-text-secondary);
   }
 
-  .light {
-    --bg-primary: #f8fafc;
-    --bg-card: #ffffff;
-    --bg-card-secondary: #f1f5f9;
-    --border-color: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-muted: #64748b;
+  /* Specific Theme Palettes */
+  [data-theme="midnight-emerald"] {
+    --color-primary: #10B981;
+    --color-secondary: #06B6D4;
+    --color-background: #080D19;
+    --color-sidebar: #0B1220;
+    --color-card: #172235;
+    --color-card-sub: #1D2B40;
+    --color-card-hover: #1E2F48;
+    --color-border: rgba(16, 185, 129, 0.22);
+    --color-gradient-start: #10B981;
+    --color-gradient-end: #06B6D4;
+    --color-glow: rgba(16, 185, 129, 0.35);
+    --color-button: #10B981;
+    --color-button-hover: #059669;
+    --color-input-background: rgba(11, 18, 32, 0.75);
   }
+
+  [data-theme="ocean-blue"] {
+    --color-primary: #3B82F6;
+    --color-secondary: #06B6D4;
+    --color-background: #080E1C;
+    --color-sidebar: #0B1426;
+    --color-card: #172640;
+    --color-card-sub: #1E3152;
+    --color-card-hover: #1E355C;
+    --color-border: rgba(59, 130, 246, 0.22);
+    --color-gradient-start: #3B82F6;
+    --color-gradient-end: #06B6D4;
+    --color-glow: rgba(59, 130, 246, 0.35);
+    --color-button: #3B82F6;
+    --color-button-hover: #2563EB;
+    --color-input-background: rgba(11, 20, 38, 0.75);
+  }
+
+  [data-theme="royal-purple"] {
+    --color-primary: #8B5CF6;
+    --color-secondary: #D946EF;
+    --color-background: #100B1D;
+    --color-sidebar: #150F27;
+    --color-card: #211934;
+    --color-card-sub: #2A2044;
+    --color-card-hover: #2E224D;
+    --color-border: rgba(139, 92, 246, 0.22);
+    --color-gradient-start: #8B5CF6;
+    --color-gradient-end: #D946EF;
+    --color-glow: rgba(139, 92, 246, 0.35);
+    --color-button: #8B5CF6;
+    --color-button-hover: #7C3AED;
+    --color-input-background: rgba(21, 15, 39, 0.75);
+  }
+
+  [data-theme="sunset-amber"] {
+    --color-primary: #F59E0B;
+    --color-secondary: #F97316;
+    --color-background: #130E0A;
+    --color-sidebar: #1B130C;
+    --color-card: #292016;
+    --color-card-sub: #362A1E;
+    --color-card-hover: #3C2E21;
+    --color-border: rgba(245, 158, 11, 0.22);
+    --color-gradient-start: #F59E0B;
+    --color-gradient-end: #F97316;
+    --color-glow: rgba(245, 158, 11, 0.35);
+    --color-button: #F59E0B;
+    --color-button-hover: #D97706;
+    --color-input-background: rgba(27, 19, 12, 0.75);
+  }
+
+  [data-theme="arctic-cyan"] {
+    --color-primary: #06B6D4;
+    --color-secondary: #0EA5E9;
+    --color-background: #071219;
+    --color-sidebar: #0A1822;
+    --color-card: #142936;
+    --color-card-sub: #1B3647;
+    --color-card-hover: #1E3C4E;
+    --color-border: rgba(6, 182, 212, 0.22);
+    --color-gradient-start: #06B6D4;
+    --color-gradient-end: #0EA5E9;
+    --color-glow: rgba(6, 182, 212, 0.35);
+    --color-button: #06B6D4;
+    --color-button-hover: #0891B2;
+    --color-input-background: rgba(10, 24, 34, 0.75);
+  }
+
+  [data-theme="ruby-rose"] {
+    --color-primary: #F43F5E;
+    --color-secondary: #EC4899;
+    --color-background: #160B13;
+    --color-sidebar: #1D101B;
+    --color-card: #2A1726;
+    --color-card-sub: #371E32;
+    --color-card-hover: #3D2138;
+    --color-border: rgba(244, 63, 94, 0.22);
+    --color-gradient-start: #F43F5E;
+    --color-gradient-end: #EC4899;
+    --color-glow: rgba(244, 63, 94, 0.35);
+    --color-button: #F43F5E;
+    --color-button-hover: #E11D48;
+    --color-input-background: rgba(29, 16, 27, 0.75);
+  }
+
+  [data-theme="forest-green"] {
+    --color-primary: #22C55E;
+    --color-secondary: #84CC16;
+    --color-background: #09130D;
+    --color-sidebar: #0D1B12;
+    --color-card: #17291D;
+    --color-card-sub: #1E3726;
+    --color-card-hover: #203D2A;
+    --color-border: rgba(34, 197, 94, 0.22);
+    --color-gradient-start: #22C55E;
+    --color-gradient-end: #84CC16;
+    --color-glow: rgba(34, 197, 94, 0.35);
+    --color-button: #22C55E;
+    --color-button-hover: #16A34A;
+    --color-input-background: rgba(13, 27, 18, 0.75);
+  }
+
+  [data-theme="silver-graphite"] {
+    --color-primary: #94A3B8;
+    --color-secondary: #CBD5E1;
+    --color-background: #0B0F16;
+    --color-sidebar: #111827;
+    --color-card: #1C2635;
+    --color-card-sub: #263345;
+    --color-card-hover: #29374B;
+    --color-border: rgba(148, 163, 184, 0.22);
+    --color-gradient-start: #94A3B8;
+    --color-gradient-end: #CBD5E1;
+    --color-glow: rgba(148, 163, 184, 0.35);
+    --color-button: #64748B;
+    --color-button-hover: #475569;
+    --color-input-background: rgba(17, 24, 39, 0.75);
+  }
+
+  /* Light Mode Overrides */
+  .light {
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-card: #FFFFFF;
+    --color-card-sub: #F8FAFC;
+    --color-card-hover: #F1F5F9;
+    --color-sidebar: #FFFFFF;
+    --color-border: #CBD5E1;
+    --color-input-background: #FFFFFF;
+  }
+}
+
+/* Global Dynamic Color Transitions (250–350ms budget) */
+body, header, aside, nav, main, footer,
+.dashboard-section, .inner-card-interactive, .stat-card,
+button, input, select, textarea, table, tr, th, td,
+.glass-panel {
+  transition: background-color 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 280ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--ep-bg-body, #080D19);
+  color: var(--ep-text-primary, #F8FAFC);
   overflow-x: hidden;
 }
 
-/* Custom scrollbars */
+/* Custom scrollbars themed dynamically */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--color-sidebar, #0B1220);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: var(--color-primary, #10B981);
+  opacity: 0.6;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.7);
+  background: var(--color-primary, #10B981);
+  opacity: 1;
 }
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: rgba(19, 27, 46, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ep-bg-card, #172235);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--ep-border, rgba(148, 163, 184, 0.16));
 }
 
 .light .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid #CBD5E1;
+}
+
+/* ============================================================
+   EduPulse Dynamic Theme Engine
+   Maps hardcoded palette classes to active theme CSS variables
+   ============================================================ */
+
+/* Surface & Card Backgrounds */
+.bg-\[\#0c1424\],
+.bg-\[\#0d1525\],
+.bg-\[\#0d1527\],
+.bg-\[\#0d1627\],
+.bg-\[\#0e1726\],
+.bg-\[\#101b2f\],
+.bg-\[\#111827\],
+.bg-\[\#111c30\],
+.bg-\[\#111c33\],
+.bg-\[\#121c33\],
+.bg-\[\#131b2e\],
+.bg-\[\#141d30\],
+.bg-\[\#162032\],
+.bg-\[\#18181b\],
+.bg-\[\#1e293b\] {
+  background-color: var(--ep-bg-card) !important;
+}
+
+/* Deep Canvas & Page Backgrounds */
+.bg-\[\#050811\],
+.bg-\[\#050914\],
+.bg-\[\#050b14\],
+.bg-\[\#070b14\],
+.bg-\[\#070c17\],
+.bg-\[\#070c18\],
+.bg-\[\#080e1b\],
+.bg-\[\#090d16\],
+.bg-\[\#090d18\],
+.bg-\[\#090e1a\],
+.bg-\[\#090e1b\],
+.bg-\[\#090f1d\],
+.bg-\[\#091122\],
+.bg-\[\#0a0f1d\],
+.bg-\[\#0b1120\],
+.bg-\[\#0f172a\],
+.bg-\[\#0f1b30\],
+.bg-\[\#0b0f19\] {
+  background-color: var(--ep-bg-body) !important;
+}
+
+/* Header & Sidebar Backgrounds */
+.bg-\[\#080d1a\] {
+  background-color: var(--ep-bg-header, var(--ep-bg-sidebar)) !important;
+}
+
+/* Sub-card & Nested Well Backgrounds */
+.bg-slate-900\/60,
+.bg-slate-900\/50,
+.bg-slate-900\/40,
+.bg-slate-900\/80 {
+  background-color: var(--ep-bg-card-sub, var(--ep-bg-card)) !important;
+}
+
+/* Card Borders */
+.border-slate-800,
+.border-slate-800\/90,
+.border-slate-800\/80,
+.border-slate-800\/70,
+.border-slate-800\/60,
+.border-slate-800\/50,
+.border-slate-700,
+.border-slate-700\/80,
+.border-slate-700\/60,
+.border-slate-700\/50 {
+  border-color: var(--ep-border) !important;
+}
+
+/* ============================================================
+   Typography & Contrast Adaptations (Clean, Smooth, High-Contrast)
+   ============================================================ */
+
+/* ============================================================
+   Typography & Contrast Adaptations (Clean, Smooth, High-Contrast)
+   ============================================================ */
+
+/* ============================================================
+   Typography & Contrast Adaptations (Clean, Smooth, High-Contrast)
+   ============================================================ */
+
+/* Elements with dark or black backgrounds retain high-contrast white text in Dark mode */
+.dark-surface,
+.dark-surface *,
+.auth-surface,
+.auth-surface *,
+[data-preserve-white],
+[data-preserve-white] *,
+.dark [class*="bg-slate-950"],
+.dark [class*="bg-slate-950"] *,
+.dark [class*="bg-slate-900"],
+.dark [class*="bg-slate-900"] *,
+.dark [class*="bg-slate-800"],
+.dark [class*="bg-slate-800"] * {
+  color: #f8fafc;
+}
+
+/* Ensure solid primary accent buttons and action badges always have crisp white text */
+button.btn-primary *,
+button[class*="bg-indigo-600"] *,
+button[class*="bg-indigo-500"] *,
+button[class*="bg-rose-600"] *,
+button[class*="bg-rose-500"] *,
+button[class*="bg-emerald-600"] *,
+button[class*="bg-emerald-500"] *,
+button[class*="bg-cyan-600"] *,
+button[class*="bg-cyan-500"] *,
+button[class*="bg-blue-600"] *,
+button[class*="bg-blue-500"] *,
+button[class*="bg-purple-600"] *,
+button[class*="bg-purple-500"] *,
+button[class*="bg-amber-600"] *,
+button[class*="bg-amber-500"] *,
+.badge-white-text {
+  color: #ffffff !important;
+}
+
+/* ============================================================
+   Light Theme Typography & Contrast Engine
+   Forces dark, bold, high-contrast text across all light surfaces
+   ============================================================ */
+.light {
+  color-scheme: light;
+  --ep-text-primary: #0f172a;
+  --ep-text-secondary: #334155;
+}
+
+.light body {
+  background-color: var(--ep-bg-body, #f1f5f9) !important;
+  color: var(--ep-text-primary, #0f172a) !important;
+}
+
+.light aside {
+  background-color: var(--ep-bg-sidebar, #ffffff) !important;
+  border-color: var(--ep-border, #cbd5e1) !important;
+}
+
+.light header {
+  background-color: var(--ep-bg-header, #ffffff) !important;
+  border-color: var(--ep-border, #cbd5e1) !important;
+}
+
+/* Headings in Light Mode on light surfaces: Deep dark slate, extra bold */
+.light h1:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *),
+.light h2:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *),
+.light h3:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *),
+.light h4:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *),
+.light h5:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *),
+.light h6:not(.auth-surface *):not(.dark-surface *):not(button.btn-primary *) {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+/* Hardcoded text-white on light surfaces becomes deep dark text, except on accent buttons & preserved badges */
+.light .text-white:not(.auth-surface *):not(.dark-surface *):not(button):not(button *):not([class*="bg-indigo-600"] *):not([class*="bg-rose-600"] *):not([class*="bg-emerald-600"] *):not([class*="bg-cyan-600"] *):not([class*="bg-purple-600"] *):not([class*="bg-amber-600"] *):not([class*="bg-blue-600"] *):not([data-preserve-white] *):not(.badge-white-text) {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* Subtext & description contrast in Light Mode on light surfaces */
+.light .text-slate-400:not(.auth-surface *):not(.dark-surface *):not(button *):not([data-preserve-white] *) {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+.light .text-slate-300:not(.auth-surface *):not(.dark-surface *):not(button *):not([data-preserve-white] *) {
+  color: #1e293b !important;
+  font-weight: 800 !important;
+}
+
+.light .text-slate-200:not(.auth-surface *):not(.dark-surface *):not(button *):not([data-preserve-white] *) {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* High-contrast color adaptation for pastel/dark-mode colors in Light Mode */
+.light .text-emerald-400,
+.light .text-emerald-300 {
+  color: #064e3b !important;
+  font-weight: 800 !important;
+}
+.light .text-rose-400,
+.light .text-rose-300 {
+  color: #881337 !important;
+  font-weight: 800 !important;
+}
+.light .text-amber-400,
+.light .text-amber-300 {
+  color: #78350f !important;
+  font-weight: 800 !important;
+}
+.light .text-cyan-400,
+.light .text-cyan-300 {
+  color: #0e7490 !important;
+  font-weight: 800 !important;
+}
+.light .text-indigo-400,
+.light .text-indigo-300 {
+  color: #312e81 !important;
+  font-weight: 800 !important;
+}
+.light .text-blue-400,
+.light .text-blue-300 {
+  color: #1e3a8a !important;
+  font-weight: 800 !important;
+}
+.light .text-purple-400,
+.light .text-purple-300 {
+  color: #581c87 !important;
+  font-weight: 800 !important;
+}
+
+/* Comprehensive Table & Roster student typography in Light mode */
+.light table {
+  color: #0f172a !important;
+}
+
+.light thead {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light thead th {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light tbody td {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Student Name in all tables & lists: Ultra Bold Deep Slate */
+.light td p,
+.light td p:first-child,
+.light td .student-name,
+.light [data-student-name],
+.light .scanned-student-name {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+/* Student ID in all tables & lists: Ultra Bold Deep Indigo */
+.light td p.font-mono,
+.light td span.font-mono,
+.light td .student-id,
+.light [data-student-id],
+.light .scanned-student-id {
+  color: #1e1b4b !important;
+  font-weight: 800 !important;
+}
+
+/* Live scanned students box in Light mode */
+.light .scanned-student-box {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Form Inputs in Light Mode */
+.light input:not([type="checkbox"]):not([type="radio"]),
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+
+.light input::placeholder {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+/* Smooth background transitions for theme changes */
+body, aside, header, main, div[style*="var(--ep-"] {
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+}
+
+/* High contrast alerts in Light Mode */
+.light .alert-critical {
+  background-color: #fef2f2 !important;
+  border-color: #ef4444 !important;
+}
+.light .alert-critical h3 {
+  color: #991b1b !important;
+  font-weight: 900 !important;
+}
+.light .alert-critical p {
+  color: #7f1d1d !important;
+  font-weight: 700 !important;
+}
+/* ============================================================
+   EduPulse Premium Hover-Based Interactive Dashboard Cards
+   ============================================================ */
+.stat-card-interactive {
+  transition: transform 350ms ease, border-color 350ms ease, box-shadow 350ms ease, background-color 350ms ease !important;
+  will-change: transform, box-shadow, border-color;
+  transform: translateY(0);
+}
+
+.stat-card-interactive:hover,
+.stat-card-interactive:focus-visible {
+  transform: translateY(-5px) !important;
+}
+
+/* Individual card hover borders & ambient glowing shadows */
+.stat-card-purple:hover,
+.stat-card-purple:focus-visible {
+  border-color: rgba(168, 85, 247, 0.8) !important;
+  box-shadow: 0 14px 34px -4px rgba(168, 85, 247, 0.42), 0 0 22px rgba(168, 85, 247, 0.25) !important;
+}
+
+.stat-card-indigo:hover,
+.stat-card-indigo:focus-visible {
+  border-color: rgba(99, 102, 241, 0.8) !important;
+  box-shadow: 0 14px 34px -4px rgba(99, 102, 241, 0.42), 0 0 22px rgba(99, 102, 241, 0.25) !important;
+}
+
+.stat-card-emerald:hover,
+.stat-card-emerald:focus-visible {
+  border-color: rgba(16, 185, 129, 0.8) !important;
+  box-shadow: 0 14px 34px -4px rgba(16, 185, 129, 0.42), 0 0 22px rgba(16, 185, 129, 0.25) !important;
+}
+
+.stat-card-cyan:hover,
+.stat-card-cyan:focus-visible {
+  border-color: rgba(6, 182, 212, 0.8) !important;
+  box-shadow: 0 14px 34px -4px rgba(6, 182, 212, 0.42), 0 0 22px rgba(6, 182, 212, 0.25) !important;
+}
+
+.stat-card-rose:hover,
+.stat-card-rose:focus-visible {
+  border-color: rgba(244, 63, 94, 0.8) !important;
+  box-shadow: 0 14px 34px -4px rgba(244, 63, 94, 0.42), 0 0 22px rgba(244, 63, 94, 0.25) !important;
+}
+
+/* Gradient overlay layer */
+.stat-card-overlay {
+  opacity: 0;
+  transition: opacity 350ms ease !important;
+  pointer-events: none;
+}
+
+.stat-card-interactive:hover .stat-card-overlay,
+.stat-card-interactive:focus-visible .stat-card-overlay {
+  opacity: 1 !important;
+}
+
+/* Top accent bar on hover */
+.stat-card-topbar {
+  opacity: 0;
+  transition: opacity 350ms ease !important;
+  pointer-events: none;
+}
+
+.stat-card-interactive:hover .stat-card-topbar,
+.stat-card-interactive:focus-visible .stat-card-topbar {
+  opacity: 1 !important;
+}
+
+/* Corner ambient glow */
+.stat-card-glow {
+  opacity: 0;
+  transition: opacity 350ms ease !important;
+  pointer-events: none;
+}
+
+.stat-card-interactive:hover .stat-card-glow,
+.stat-card-interactive:focus-visible .stat-card-glow {
+  opacity: 0.55 !important;
+}
+
+/* Icon container animation on hover: Scale 1.1 + slight rotation + vibrant glow */
+.stat-card-icon {
+  transition: transform 350ms ease, box-shadow 350ms ease, background-color 350ms ease, color 350ms ease !important;
+}
+
+.stat-card-interactive:hover .stat-card-icon,
+.stat-card-interactive:focus-visible .stat-card-icon {
+  transform: scale(1.1) rotate(-3deg) !important;
+}
+
+.stat-card-purple:hover .stat-card-icon,
+.stat-card-purple:focus-visible .stat-card-icon {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.75) !important;
+}
+
+.stat-card-indigo:hover .stat-card-icon,
+.stat-card-indigo:focus-visible .stat-card-icon {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(59, 130, 246, 0.75) !important;
+}
+
+.stat-card-emerald:hover .stat-card-icon,
+.stat-card-emerald:focus-visible .stat-card-icon {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.75) !important;
+}
+
+.stat-card-cyan:hover .stat-card-icon,
+.stat-card-cyan:focus-visible .stat-card-icon {
+  background-color: #0891b2 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(6, 182, 212, 0.75) !important;
+}
+
+.stat-card-rose:hover .stat-card-icon,
+.stat-card-rose:focus-visible .stat-card-icon {
+  background-color: #e11d48 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 22px rgba(244, 63, 94, 0.75) !important;
+}
+
+/* ============================================================
+   EduPulse Premium Section Hover System
+   ============================================================ */
+.dashboard-section {
+  position: relative;
+  transition: transform 350ms cubic-bezier(0.2, 0, 0, 1), border-color 350ms ease, box-shadow 350ms ease, background-color 350ms ease !important;
+  will-change: transform, box-shadow, border-color;
+  transform: translateY(0);
+}
+
+.dashboard-section > *:not(.section-hover-overlay):not(.pointer-events-none):not([class*="absolute"]) {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-section > .pointer-events-none,
+.dashboard-section > [class*="absolute"] {
+  position: absolute !important;
+}
+
+.dashboard-section:hover {
+  transform: translateY(-3px) !important;
+}
+
+/* Section Emerald → Cyan (Live Running Class Monitor) */
+.section-hover-emerald-cyan:hover {
+  border-color: rgba(16, 185, 129, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(16, 185, 129, 0.22), 0 0 16px rgba(6, 182, 212, 0.15) !important;
+}
+.section-hover-emerald-cyan .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+}
+
+/* Section Emerald → Teal (Attendance Overview / Next Upcoming Class) */
+.section-hover-emerald-teal:hover {
+  border-color: rgba(20, 184, 166, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(16, 185, 129, 0.22), 0 0 16px rgba(20, 184, 166, 0.15) !important;
+}
+.section-hover-emerald-teal .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(20, 184, 166, 0.08) 100%);
+}
+
+/* Section Blue → Cyan (Class Routine & Rooms) */
+.section-hover-blue-cyan:hover {
+  border-color: rgba(59, 130, 246, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(59, 130, 246, 0.22), 0 0 16px rgba(6, 182, 212, 0.15) !important;
+}
+.section-hover-blue-cyan .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+}
+
+/* Section Amber → Orange (Examinations / Quizzes / Notices) */
+.section-hover-amber-orange:hover {
+  border-color: rgba(245, 158, 11, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(245, 158, 11, 0.22), 0 0 16px rgba(249, 115, 22, 0.15) !important;
+}
+.section-hover-amber-orange .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%);
+}
+
+/* Section Purple → Pink (Assignments Hub) */
+.section-hover-purple-pink:hover {
+  border-color: rgba(168, 85, 247, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(168, 85, 247, 0.22), 0 0 16px rgba(236, 72, 153, 0.15) !important;
+}
+.section-hover-purple-pink .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+
+/* Section Cyan → Blue (Syllabus Tracker / Study Materials) */
+.section-hover-cyan-blue:hover {
+  border-color: rgba(6, 182, 212, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(6, 182, 212, 0.22), 0 0 16px rgba(59, 130, 246, 0.15) !important;
+}
+.section-hover-cyan-blue .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+}
+
+/* Section Violet → Indigo (Academic Performance & Ledger) */
+.section-hover-violet-indigo:hover {
+  border-color: rgba(139, 92, 246, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(139, 92, 246, 0.22), 0 0 16px rgba(99, 102, 241, 0.15) !important;
+}
+.section-hover-violet-indigo .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%);
+}
+
+/* Section Rose → Red (Academic Risk & Warnings) */
+.section-hover-rose-red:hover {
+  border-color: rgba(244, 63, 94, 0.65) !important;
+  box-shadow: 0 16px 36px -6px rgba(244, 63, 94, 0.22), 0 0 16px rgba(239, 68, 68, 0.15) !important;
+}
+.section-hover-rose-red .section-hover-overlay {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.14) 0%, rgba(239, 68, 68, 0.08) 100%);
+}
+
+.section-hover-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 350ms ease !important;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dashboard-section:hover .section-hover-overlay {
+  opacity: 1 !important;
+}
+
+/* Inner card smooth lift and border glow on hover */
+.inner-card-interactive {
+  position: relative;
+  transition: transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease, background-color 250ms ease !important;
+  will-change: transform, box-shadow, border-color;
+  transform: translateY(0);
+}
+
+.inner-card-interactive:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* Light mode adjustments for section hover */
+.light .dashboard-section:hover {
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+.light .inner-card-interactive:hover {
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.12) !important;
+  border-color: rgba(100, 116, 139, 0.4) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-section,
+  .stat-card-interactive,
+  .inner-card-interactive,
+  .stat-card-icon {
+    transition: none !important;
+    transform: none !important;
+  }
 }

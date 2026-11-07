@@ -12,11 +12,16 @@ import {
   ShieldAlert,
   Zap,
   CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
   RotateCw
 } from 'lucide-react';
 import { GoogleAuthModal } from './GoogleAuthModal';
 import { EmailOtpVerificationModal } from './EmailOtpVerificationModal';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { signInWithRealGoogle } from '../../services/firebaseAuth';
+import { EduPulseLogo } from '../common/EduPulseLogo';
 
 const DEPARTMENT_OPTIONS = ['CSE', 'EEE', 'BBA', 'ENG'];
 const BATCH_OPTIONS = ['62nd Batch', '61st Batch', '60th Batch', '59th Batch', '58th Batch'];
@@ -31,10 +36,14 @@ export const AuthScreen: React.FC = () => {
   // Form Fields
   const [fullName, setFullName] = useState('Fathin Sadman');
   const [email, setEmail] = useState('student@metrouni.edu.bd');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('student123');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [idNumber, setIdNumber] = useState('241-115-211');
   const [department, setDepartment] = useState('CSE');
-  const [batch, setBatch] = useState('61st Batch');
+  const [batch, setBatch] = useState('60th Batch');
   const [section, setSection] = useState('Section A');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -51,6 +60,7 @@ export const AuthScreen: React.FC = () => {
   // Modals
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [pendingRegistrationPayload, setPendingRegistrationPayload] = useState<{
     name: string;
     email: string;
@@ -71,17 +81,17 @@ export const AuthScreen: React.FC = () => {
       setEmail('student@metrouni.edu.bd');
       setIdNumber('241-115-211');
       setFullName('Fathin Sadman');
-      setPassword('password123');
+      setPassword(authMode === 'SIGN_IN' ? 'student123' : '');
     } else if (role === 'TEACHER') {
-      setEmail('fahim.cse@metrouni.edu.bd');
+      setEmail('teacher@metrouni.edu.bd');
       setIdNumber('FAC-CSE-042');
       setFullName('Dr. Fahim Ahmed');
-      setPassword('password123');
+      setPassword(authMode === 'SIGN_IN' ? 'teacher123' : '');
     } else if (role === 'ADMIN') {
-      setEmail('admin.registrar@metrouni.edu.bd');
+      setEmail('admin@metrouni.edu.bd');
       setIdNumber('REG-ADMIN-01');
       setFullName('Prof. Dr. M. Rahman');
-      setPassword('password123');
+      setPassword(authMode === 'SIGN_IN' ? 'admin123' : '');
     }
   };
 
@@ -107,7 +117,7 @@ export const AuthScreen: React.FC = () => {
 
       if (existing) {
         // User already has an account -> log in directly
-        const res = login(gEmail, existing.role);
+        const res = await login(gEmail, existing.role);
         if (!res.success && !res.pending) {
           setErrorMessage(res.error || 'Google sign-in failed.');
         }
@@ -132,7 +142,7 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail.includes('@') || (!cleanEmail.endsWith('@gmail.com') && !cleanEmail.endsWith('@metrouni.edu.bd'))) {
@@ -142,7 +152,7 @@ export const AuthScreen: React.FC = () => {
     setErrorMessage('');
 
     if (authMode === 'SIGN_IN') {
-      const res = login(email, selectedRole, password);
+      const res = await login(email, selectedRole, password);
       if (!res.success) {
         setErrorMessage(res.error || 'Authentication failed. Please check your credentials.');
       }
@@ -155,6 +165,10 @@ export const AuthScreen: React.FC = () => {
         setErrorMessage('Password must be at least 6 characters.');
         return;
       }
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match. Please verify that both passwords are identical.');
+        return;
+      }
 
       // Prepare payload and trigger 6-digit email OTP verification before submitting to pending state!
       const payload = {
@@ -162,6 +176,7 @@ export const AuthScreen: React.FC = () => {
         email: cleanEmail,
         role: selectedRole,
         password,
+        confirmPassword,
         studentId: selectedRole === 'STUDENT' ? idNumber.trim() : undefined,
         batch: selectedRole === 'STUDENT' ? batch : undefined,
         section: selectedRole === 'STUDENT' ? section : undefined,
@@ -171,6 +186,16 @@ export const AuthScreen: React.FC = () => {
       };
 
       setPendingRegistrationPayload(payload);
+
+      // Asynchronously trigger backend registration to dispatch Nodemailer Gmail OTP
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => {
+        console.warn('Backend /api/auth/register dispatch fallback:', err);
+      });
+
       setOtpModalOpen(true);
     }
   };
@@ -185,47 +210,52 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#070b14] text-white flex flex-col justify-center items-center p-4 relative overflow-hidden select-none auth-surface dark-surface">
       {/* Background Glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Authentication Card */}
-      <div className="w-full max-w-md bg-[#0d1525]/95 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-xl p-6 sm:p-8 relative z-10">
-        {/* Brand Header */}
-        <div className="text-center space-y-2 mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25 mb-1">
-            <Zap className="w-6 h-6 fill-slate-950" />
-          </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">EduPulse</h1>
-          <p className="text-[11px] text-cyan-400 font-bold tracking-wider uppercase">
-            CSE Dept • Metropolitan University, Sylhet
-          </p>
-          <p className="text-xs text-slate-400">
+      <div className="w-full max-w-md bg-[#0d1525] border border-slate-700/80 rounded-3xl shadow-2xl backdrop-blur-xl p-6 sm:p-8 relative z-10 auth-surface">
+        {/* Gorgeous Brand Header */}
+        <div className="flex flex-col items-center justify-center mb-6">
+          <EduPulseLogo size="lg" className="justify-center" subtitleText="CSE DEPT • METROPOLITAN UNIVERSITY" />
+          <p className="text-xs text-slate-300 font-medium mt-3 text-center">
             Academic Performance & Early Warning Platform
           </p>
         </div>
 
         {/* Tab Switcher: Sign In vs Sign Up */}
-        <div className="grid grid-cols-2 p-1 bg-slate-950/80 border border-slate-800 rounded-2xl mb-5">
+        <div className="grid grid-cols-2 p-1 bg-slate-950/90 border border-slate-700 rounded-2xl mb-5">
           <button
             type="button"
-            onClick={() => { setAuthMode('SIGN_IN'); setErrorMessage(''); }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => {
+              setAuthMode('SIGN_IN');
+              setErrorMessage('');
+              if (selectedRole === 'STUDENT') setPassword('student123');
+              else if (selectedRole === 'TEACHER') setPassword('teacher123');
+              else setPassword('admin123');
+            }}
+            className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               authMode === 'SIGN_IN'
-                ? 'bg-cyan-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             Sign In
           </button>
           <button
             type="button"
-            onClick={() => { setAuthMode('SIGN_UP'); setErrorMessage(''); }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => {
+              setAuthMode('SIGN_UP');
+              setErrorMessage('');
+              setPassword('');
+              setConfirmPassword('');
+            }}
+            className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               authMode === 'SIGN_UP'
-                ? 'bg-cyan-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             Create Account
@@ -274,7 +304,7 @@ export const AuthScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setGoogleModalOpen(true)}
-            className="text-[11px] text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer flex items-center gap-1"
+            className="text-[11px] text-cyan-300/90 hover:text-cyan-200 transition-colors cursor-pointer flex items-center gap-1 font-medium"
           >
             <span>Or choose pre-configured testing account</span>
           </button>
@@ -282,26 +312,26 @@ export const AuthScreen: React.FC = () => {
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-3">
-          <div className="h-px bg-slate-800 flex-1" />
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-            Or with Institutional Account
+          <div className="h-px bg-slate-700/80 flex-1" />
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-300">
+            OR WITH INSTITUTIONAL ACCOUNT
           </span>
-          <div className="h-px bg-slate-800 flex-1" />
+          <div className="h-px bg-slate-700/80 flex-1" />
         </div>
 
         {/* Role Selector Tabs */}
         <div className="space-y-1.5 mb-4">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            {authMode === 'SIGN_IN' ? 'Portal Access Scope:' : 'Register Account Role:'}
+          <label className="text-[11px] font-bold text-slate-200 uppercase tracking-wider block">
+            {authMode === 'SIGN_IN' ? 'PORTAL ACCESS SCOPE:' : 'REGISTER ACCOUNT ROLE:'}
           </label>
-          <div className={`grid ${authMode === 'SIGN_UP' ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-2xl`}>
+          <div className={`grid ${authMode === 'SIGN_UP' ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 p-1 bg-slate-950/90 border border-slate-700 rounded-2xl`}>
             <button
               type="button"
               onClick={() => handleRoleChange('STUDENT')}
-              className={`flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedRole === 'STUDENT'
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
+                  : 'text-slate-300 hover:text-white'
               }`}
             >
               <GraduationCap className="w-4 h-4" />
@@ -311,10 +341,10 @@ export const AuthScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => handleRoleChange('TEACHER')}
-              className={`flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedRole === 'TEACHER'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
+                  : 'text-slate-300 hover:text-white'
               }`}
             >
               <School className="w-4 h-4" />
@@ -325,10 +355,10 @@ export const AuthScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('ADMIN')}
-                className={`flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   selectedRole === 'ADMIN'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-purple-500 text-slate-950 shadow-md font-black'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <ShieldCheck className="w-4 h-4" />
@@ -339,24 +369,30 @@ export const AuthScreen: React.FC = () => {
         </div>
 
         {authMode === 'SIGN_UP' && (
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-[11px] mb-4 space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-cyan-200">
-              <Zap className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span>Administrator Approval Mandatory:</span>
+          <div
+            style={{ backgroundColor: '#0c2742', borderColor: '#38bdf8' }}
+            className="p-3.5 rounded-2xl border text-[11px] mb-4 space-y-1.5 shadow-lg"
+          >
+            <div className="flex items-center gap-2 font-black text-xs text-cyan-300">
+              <Zap className="w-4 h-4 text-cyan-300 shrink-0" />
+              <span className="text-cyan-300 font-black">Administrator Approval Mandatory:</span>
             </div>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
+            <p className="text-[11px] leading-relaxed font-semibold text-cyan-100">
               When creating an account as a Student or Teacher, your account will be placed in Pending status. Access is granted once verified and approved by the Registrar.
             </p>
           </div>
         )}
 
         {/* Strict RBAC Guard Warning Banner */}
-        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] mb-4 space-y-1">
-          <div className="flex items-center gap-1.5 font-bold text-amber-200">
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Strict Role Isolation Enforced:</span>
+        <div
+          style={{ backgroundColor: '#332009', borderColor: '#f59e0b' }}
+          className="p-3.5 rounded-2xl border text-[11px] mb-4 space-y-1.5 shadow-lg"
+        >
+          <div className="flex items-center gap-2 font-black text-xs text-amber-300">
+            <ShieldAlert className="w-4 h-4 text-amber-300 shrink-0" />
+            <span className="text-amber-300 font-black">Strict Role Isolation Enforced:</span>
           </div>
-          <p className="text-slate-300 text-[11px] leading-relaxed">
+          <p className="text-[11px] leading-relaxed font-semibold text-amber-100">
             Students cannot access Teacher or Administrator portals. Teachers cannot access Student or Administrator portals. Administrators operate exclusively in the Admin console.
           </p>
         </div>
@@ -509,20 +545,122 @@ export const AuthScreen: React.FC = () => {
             </>
           )}
 
-          <div>
-            <label className="text-[11px] font-semibold text-slate-300 block mb-1">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                placeholder="Minimum 6 characters"
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
+          {authMode === 'SIGN_IN' ? (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-semibold text-slate-300">Password</label>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className="text-[11px] font-medium text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showSignInPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your account password"
+                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignInPassword(!showSignInPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                  title={showSignInPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showSignInPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Sign Up: Set Password */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                  Set Password <span className="text-slate-400 font-normal">(Minimum 6 characters)</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => {
+                      setPassword(e.target.value);
+                      setErrorMessage('');
+                    }}
+                    required
+                    placeholder="Create a strong password"
+                    className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sign Up: Confirm Password */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                  Confirm Password <span className="text-cyan-400 font-normal">(Re-type to prevent mistakes)</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => {
+                      setConfirmPassword(e.target.value);
+                      setErrorMessage('');
+                    }}
+                    required
+                    placeholder="Re-enter identical password"
+                    className={`w-full bg-slate-950 border rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:ring-2 ${
+                      confirmPassword && password !== confirmPassword
+                        ? 'border-rose-500/80 focus:ring-rose-500'
+                        : confirmPassword && password === confirmPassword
+                        ? 'border-emerald-500/80 focus:ring-emerald-500'
+                        : 'border-slate-700/80 focus:ring-cyan-500'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                    title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Match Status Live Feedback */}
+                {confirmPassword.length > 0 && (
+                  <div className="mt-1 flex items-center gap-1.5 text-[10px]">
+                    {password === confirmPassword ? (
+                      <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Passwords match perfectly
+                      </span>
+                    ) : (
+                      <span className="text-rose-400 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Passwords do not match
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {errorMessage && (
             <p className="text-xs text-rose-400 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
@@ -577,9 +715,9 @@ export const AuthScreen: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   handleRoleChange('STUDENT');
-                  login('student@metrouni.edu.bd', 'STUDENT', 'student123');
+                  await login('student@metrouni.edu.bd', 'STUDENT', 'student123');
                 }}
                 className="mt-2 w-full py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-[10px] font-bold transition-colors cursor-pointer"
               >
@@ -599,9 +737,9 @@ export const AuthScreen: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   handleRoleChange('TEACHER');
-                  login('teacher@metrouni.edu.bd', 'TEACHER', 'teacher123');
+                  await login('teacher@metrouni.edu.bd', 'TEACHER', 'teacher123');
                 }}
                 className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-slate-950 text-emerald-300 text-[10px] font-bold transition-colors cursor-pointer"
               >
@@ -621,9 +759,9 @@ export const AuthScreen: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   handleRoleChange('ADMIN');
-                  login('admin@metrouni.edu.bd', 'ADMIN', 'admin123');
+                  await login('admin@metrouni.edu.bd', 'ADMIN', 'admin123');
                 }}
                 className="mt-2 w-full py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500 hover:text-white text-purple-300 text-[10px] font-bold transition-colors cursor-pointer"
               >
@@ -654,6 +792,18 @@ export const AuthScreen: React.FC = () => {
         userName={pendingRegistrationPayload?.name || fullName}
         accessToken={googleAccessToken}
         onVerifySuccess={handleOtpVerified}
+      />
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        initialEmail={email}
+        onPasswordResetSuccess={(resetEmail, newPw) => {
+          setEmail(resetEmail);
+          setPassword(newPw);
+          setErrorMessage('');
+        }}
       />
     </div>
   );

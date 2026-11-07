@@ -141,7 +141,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
 
       if (existing) {
         // User already has an account
-        const res = loginWithGoogle(
+        const res = await loginWithGoogle(
           {
             name: existing.name || gName,
             email: gEmail,
@@ -178,7 +178,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   /**
    * Register directly using Google Verified Identity (instant, zero warnings)
    */
-  const handleDirectRegisterGoogle = () => {
+  const handleDirectRegisterGoogle = async () => {
     if (!realGoogleUser) return;
     setErrorMsg(null);
 
@@ -194,7 +194,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
       department: department || 'CSE'
     };
 
-    const res = loginWithGoogle(payload, true);
+    const res = await loginWithGoogle(payload, true);
     if (!res.success && !res.pending) {
       setErrorMsg(res.error || 'Google registration failed.');
       return;
@@ -229,10 +229,10 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   /**
    * When OTP verified, register account into PENDING approval state
    */
-  const handleOtpVerified = () => {
+  const handleOtpVerified = async () => {
     if (!pendingGooglePayload) return;
     setOtpModalOpen(false);
-    const res = loginWithGoogle(pendingGooglePayload, true);
+    const res = await loginWithGoogle(pendingGooglePayload, true);
     if (!res.success && !res.pending) {
       setErrorMsg(res.error || 'Google registration failed.');
       return;

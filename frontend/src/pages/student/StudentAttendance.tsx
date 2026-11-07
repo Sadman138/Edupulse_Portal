@@ -8,13 +8,17 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Download
+  Download,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 
 export const StudentAttendance: React.FC = () => {
-  const { attendanceLogs, setActiveTab, studentCourses } = useApp();
+  const { attendanceLogs, setActiveTab, studentCourses, theme } = useApp();
   const [filterCourse, setFilterCourse] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
+  const isLight = theme.mode === 'light';
 
   const filteredLogs = attendanceLogs.filter(log => {
     if (filterCourse !== 'ALL' && log.courseCode !== filterCourse) return false;
@@ -29,67 +33,120 @@ export const StudentAttendance: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2
+            style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+            className="text-2xl sm:text-3xl font-black tracking-tight"
+          >
             Attendance Log & Verification History
           </h2>
-          <p className="text-xs text-slate-400">
-            Real-time biometric & dynamic QR session attendance logs
+          <p style={{ color: 'var(--ep-text-secondary, #94a3b8)' }} className="text-xs sm:text-sm font-semibold mt-0.5">
+            Real-time biometric & dynamic 5-minute QR classroom session records
           </p>
         </div>
 
         <button
           onClick={() => setActiveTab('qr-scanner')}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all w-fit"
+          style={{ backgroundColor: theme.accentColor }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl !text-white text-xs font-black shadow-lg transition-all w-fit cursor-pointer hover:brightness-110 active:scale-95"
         >
-          <QrCode className="w-4 h-4" />
+          <QrCode className="w-4 h-4 text-white" />
           <span>Launch QR Scanner</span>
         </button>
       </div>
 
       {/* Attendance Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs text-slate-400 font-semibold uppercase">Total Sessions</p>
-          <p className="text-2xl font-black text-white mt-1">{totalSessions}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+        <div
+          style={{
+            backgroundColor: 'var(--ep-bg-card, #0d1627)',
+            borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+          }}
+          className="p-4 rounded-2xl border shadow-md"
+        >
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Sessions</p>
+          <p
+            style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+            className="text-2xl sm:text-3xl font-black mt-1"
+          >
+            {totalSessions}
+          </p>
         </div>
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-          <p className="text-xs font-semibold uppercase">Present</p>
-          <p className="text-2xl font-black mt-1">{presentCount}</p>
+
+        <div
+          style={{
+            backgroundColor: isLight ? '#ecfdf5' : 'rgba(16, 185, 129, 0.1)',
+            borderColor: isLight ? '#a7f3d0' : 'rgba(16, 185, 129, 0.25)'
+          }}
+          className="p-4 rounded-2xl border text-emerald-500 shadow-md"
+        >
+          <p className="text-xs font-bold uppercase tracking-wider">Present</p>
+          <p className="text-2xl sm:text-3xl font-black mt-1">{presentCount}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-          <p className="text-xs font-semibold uppercase">Late</p>
-          <p className="text-2xl font-black mt-1">{lateCount}</p>
+
+        <div
+          style={{
+            backgroundColor: isLight ? '#fffbeb' : 'rgba(245, 158, 11, 0.1)',
+            borderColor: isLight ? '#fde68a' : 'rgba(245, 158, 11, 0.25)'
+          }}
+          className="p-4 rounded-2xl border text-amber-500 shadow-md"
+        >
+          <p className="text-xs font-bold uppercase tracking-wider">Late</p>
+          <p className="text-2xl sm:text-3xl font-black mt-1">{lateCount}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-          <p className="text-xs font-semibold uppercase">Absent</p>
-          <p className="text-2xl font-black mt-1">{absentCount}</p>
+
+        <div
+          style={{
+            backgroundColor: isLight ? '#fef2f2' : 'rgba(244, 63, 94, 0.1)',
+            borderColor: isLight ? '#fecdd3' : 'rgba(244, 63, 94, 0.25)'
+          }}
+          className="p-4 rounded-2xl border text-rose-500 shadow-md"
+        >
+          <p className="text-xs font-bold uppercase tracking-wider">Absent</p>
+          <p className="text-2xl sm:text-3xl font-black mt-1">{absentCount}</p>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[#111827] border border-slate-800">
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold">
-          <Filter className="w-4 h-4 text-indigo-400" />
+      <div
+        style={{
+          backgroundColor: 'var(--ep-bg-card, #0d1627)',
+          borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border shadow-md"
+      >
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+          <Filter className="w-4 h-4 text-cyan-400" />
           <span>Filter Logs:</span>
         </div>
 
         <select
           value={filterCourse}
           onChange={e => setFilterCourse(e.target.value)}
-          className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className={`rounded-xl px-3 py-2 text-xs font-bold border transition-colors cursor-pointer ${
+            isLight
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'
+              : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-700'
+          }`}
         >
           <option value="ALL">All Enrolled Courses</option>
           {studentCourses.map(c => (
-            <option key={c.courseId} value={c.courseCode}>{c.courseCode} - {c.courseTitle}</option>
+            <option key={c.courseId} value={c.courseCode}>
+              {c.courseCode} - {c.courseTitle}
+            </option>
           ))}
         </select>
 
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className={`rounded-xl px-3 py-2 text-xs font-bold border transition-colors cursor-pointer ${
+            isLight
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300'
+              : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-700'
+          }`}
         >
           <option value="ALL">All Statuses</option>
           <option value="PRESENT">Present Only</option>
@@ -99,10 +156,23 @@ export const StudentAttendance: React.FC = () => {
       </div>
 
       {/* Logs Table */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
+      <div
+        style={{
+          backgroundColor: 'var(--ep-bg-card, #0d1627)',
+          borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="rounded-3xl border overflow-hidden shadow-xl"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <thead
+              style={{
+                backgroundColor: isLight ? '#f8fafc' : 'rgba(15, 23, 42, 0.8)',
+                color: isLight ? '#334155' : '#94a3b8',
+                borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+              }}
+              className="uppercase tracking-wider font-extrabold border-b"
+            >
               <tr>
                 <th className="px-5 py-3.5">Date & Time</th>
                 <th className="px-5 py-3.5">Course Code & Title</th>
@@ -111,25 +181,87 @@ export const StudentAttendance: React.FC = () => {
                 <th className="px-5 py-3.5 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+            <tbody
+              style={{ borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))' }}
+              className="divide-y"
+            >
               {filteredLogs.map(log => (
-                <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={log.id}
+                  className={`transition-colors ${
+                    isLight ? 'hover:bg-slate-100/70' : 'hover:bg-slate-800/40'
+                  }`}
+                >
                   <td className="px-5 py-4 font-mono">
-                    <p className="font-semibold text-white">{log.date}</p>
-                    <p className="text-[11px] text-slate-500">{log.timeSlot}</p>
+                    <p
+                      style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+                      className="font-bold text-xs"
+                    >
+                      {log.date}
+                    </p>
+                    <p style={{ color: 'var(--ep-text-secondary, #94a3b8)' }} className="text-[11px] font-semibold mt-0.5">
+                      {log.timeSlot}
+                    </p>
                   </td>
+
                   <td className="px-5 py-4">
-                    <p className="font-bold text-white text-sm">{log.courseCode}</p>
-                    <p className="text-slate-400 text-xs">{log.courseTitle}</p>
+                    <p
+                      style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+                      className="font-black text-sm"
+                    >
+                      {log.courseCode}
+                    </p>
+                    <p style={{ color: 'var(--ep-text-secondary, #94a3b8)' }} className="text-xs font-semibold">
+                      {log.courseTitle}
+                    </p>
                   </td>
-                  <td className="px-5 py-4 text-slate-400 font-medium">
+
+                  <td className="px-5 py-4 font-bold" style={{ color: isLight ? '#334155' : '#cbd5e1' }}>
                     {log.room}
                   </td>
+
                   <td className="px-5 py-4">
-                    <span className="font-mono text-[11px] bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 text-slate-300">
-                      {log.verifiedVia === 'DYNAMIC_QR' ? '⚡ DYNAMIC QR TOKEN' : '📋 MANUAL TEACHER ROSTER'}
+                    {/* Fixed Verification Badge: light theme friendly, no black blocks! */}
+                    <span
+                      style={{
+                        backgroundColor: isLight
+                          ? log.verifiedVia === 'DYNAMIC_QR'
+                            ? '#e0f2fe'
+                            : '#f1f5f9'
+                          : log.verifiedVia === 'DYNAMIC_QR'
+                          ? 'rgba(6, 182, 212, 0.15)'
+                          : 'rgba(255, 255, 255, 0.08)',
+                        borderColor: isLight
+                          ? log.verifiedVia === 'DYNAMIC_QR'
+                            ? '#7dd3fc'
+                            : '#cbd5e1'
+                          : log.verifiedVia === 'DYNAMIC_QR'
+                          ? 'rgba(6, 182, 212, 0.35)'
+                          : 'rgba(255, 255, 255, 0.15)',
+                        color: isLight
+                          ? log.verifiedVia === 'DYNAMIC_QR'
+                            ? '#0369a1'
+                            : '#1e293b'
+                          : log.verifiedVia === 'DYNAMIC_QR'
+                          ? '#38bdf8'
+                          : '#e2e8f0'
+                      }}
+                      className="font-mono text-[11px] font-extrabold px-3 py-1.5 rounded-xl border inline-flex items-center gap-1.5 shadow-xs"
+                    >
+                      {log.verifiedVia === 'DYNAMIC_QR' ? (
+                        <>
+                          <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                          <span>DYNAMIC QR TOKEN</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300 shrink-0" />
+                          <span>MANUAL TEACHER ROSTER</span>
+                        </>
+                      )}
                     </span>
                   </td>
+
                   <td className="px-5 py-4 text-right">
                     <StatusBadge status={log.status} />
                   </td>

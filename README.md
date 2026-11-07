@@ -1,78 +1,81 @@
-# EduPulse — Academic Performance & Monitoring Platform
+# EduPulse — Complete MERN Stack Academic Platform
 ### Metropolitan University &bull; Department of Computer Science & Engineering
 **Team Delta (CSE 58th Batch):** Raiyan Chowdhury (241-115-210), Fathin Sadman (241-115-211), Md Al Mekdad Ajmol (241-115-223)
 
 ---
 
-## 🎯 Current Milestone: Weeks 1 – 5 Complete (Full Frontend)
+## 🎯 Final MERN Stack Architecture
 
-This release delivers the complete frontend architecture and feature sets spanning **Week 1 through Week 5** as outlined in the university syllabus:
+The EduPulse Academic Monitoring & Early Warning Platform has been fully migrated from MySQL to an enterprise-grade **MERN Stack** architecture:
 
-- ✅ **Week 1:** Requirement Analysis & Project Planning, RBAC matrix, Early Warning rules (< 75% attendance / < 40% marks).
-- ✅ **Week 2:** UI/UX Design System, dark/light themes, color palettes, responsive universal layout (Header, multi-dock Sidebar, Footer).
-- ✅ **Week 3:** Login gateway with form validation, Student Academic Dashboard (SGPA/CGPA, credits, marks, attendance %), course-wise risk badges (`SAFE`, `WARNING`, `CRITICAL`), and Red Alert banner.
-- ✅ **Week 4:** Dynamic QR Attendance Scanner UI, previous result submission form with verification tracker, notice board with PDF preview, assignment hub (file uploads & rubrics), study material downloads, co-curricular profile, and class timetable routine.
-- ✅ **Week 5 (Teacher):** Teacher overview dashboard, enrolled student directory with section filters, dynamic QR generator with live 60s countdown timer & manual attendance fallback roster, continuous assessment spreadsheet with instant grade recalculation & bulk CSV import/export, assignment creation & grading desk, notice publishing, study material upload, previous result verification desk, and early warning high-risk student alert desk.
-- ✅ **Week 5 (Admin):** Institutional admin dashboard with metrics (Total Students, Average Attendance, Pass Rate, Active Faculty), full CRUD desks for Departments, Semesters/Sessions, Courses Catalog, Faculty Instructors Directory, and Students Registry, plus an interactive Course Allocation & Schedule screen with conflict detection.
+* **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS
+* **Backend:** Node.js + Express.js + TypeScript
+* **Database:** MongoDB Atlas (All 17 normalized schemas migrated)
+* **ODM:** Mongoose
+* **Authentication:** Genuine JWT (HS256) + bcrypt (10 rounds password hashing)
+* **Email Verification:** Nodemailer + Gmail SMTP (6-digit OTP with 5m TTL index & 60s cooldown)
+* **Authorization:** Role-Based Access Control (RBAC) across Student, Teacher, and Administrator
 
----
-
-## 📂 Repository Architecture
-
-```
-edupulse-portal/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── auth/          # AuthScreen, AuthModal, SwitchAccountModal
-│   │   │   ├── common/        # StatCard, StatusBadge, PDFDocumentModal, ThemeCustomizerModal
-│   │   │   └── layout/        # Header, Sidebar (Role-based), Footer
-│   │   ├── context/           # Central AppContext (State persistence & operations)
-│   │   ├── data/              # Realistic mock data for Student, Teacher, Admin
-│   │   ├── pages/
-│   │   │   ├── student/       # 9 Student Feature Screens (W3-W4)
-│   │   │   ├── teacher/       # 9 Teacher Console Screens (W5)
-│   │   │   └── admin/         # 7 Admin Console Screens & CRUD Desks (W5)
-│   │   ├── theme/             # Palette definitions & customizer
-│   │   ├── types/             # TypeScript interfaces for all roles & entities
-│   │   ├── App.tsx            # Universal dynamic router & view dispatcher
-│   │   ├── main.tsx           # Application root entry point
-│   │   └── index.css          # Tailwind CSS v4 setup & theme styles
-│   └── README.md
-│
-├── backend/                   # Node.js + Express API Server
-│   ├── README.md
-│   └── server.ts
-│
-├── index.html                 # HTML Entry with fonts and metadata
-├── package.json               # Root scripts & dependencies
-├── tsconfig.json              # TypeScript compilation config
-├── vite.config.ts             # Vite bundler config
-└── WEEK_1_TO_5_PROJECT_DELIVERABLES.md # Comprehensive syllabus progress report
-```
+> **Notice:** MySQL and mysql2 are **permanently discontinued**. MongoDB is now the single authoritative database.
 
 ---
 
-## ⚡ 1-Click Evaluation Credentials
+## 🗄️ 17 Migrated Mongoose Models (+ OTPVerification)
 
-Use the **"Switch Role"** pill button at the top header to instantly switch between personas:
-
-| Role | Persona Name | Institutional Email | Key Access Scope |
-|---|---|---|---|
-| 🎓 **Student** | Fathin Sadman | `student@metrouni.edu.bd` | Course grades, QR scanner, assignments, notices, routine |
-| 👨‍🏫 **Teacher** | Dr. Tariqul Islam | `tariqul.cse@metrouni.edu.bd` | Live QR session, marks spreadsheet, CSV import, verifications |
-| 🛡️ **Admin** | Prof. Dr. M. Rahman | `admin.registrar@metrouni.edu.bd` | KPIs, CRUD for Depts, Semesters, Courses, Faculty, Students & Allocations |
+1. `Department` (`departments`) — Department codes, chairpersons, faculty/student quotas
+2. `Semester` (`semesters`) — Academic sessions, start/end dates, max credits, active flags
+3. `User` (`users`) — Central authentication, bcrypt hash, role, approval status, `isEmailVerified`
+4. `Student` (`students`) — Roll number, CGPA, attendance, batch, section, risk level
+5. `Teacher` (`teachers`) — Employee ID, designation, department, contact info
+6. `Course` (`courses`) — Course catalog, code, credits, theory/lab/project types
+7. `CourseAllocation` (`course_allocations`) — Teacher-course timetable with conflict prevention indexes
+8. `CourseEnrollment` (`course_enrollments`) — Student enrollments and final course grades
+9. `QRAttendanceSession` (`qr_attendance_sessions`) — Dynamic 60-second QR session tokens
+10. `AttendanceLog` (`attendance_logs`) — Verified attendance check-in logs
+11. `CourseEvaluation` (`course_evaluations`) — Quizzes, midterms, assignments, finals, auto GPA/grade
+12. `PreviousResult` (`previous_results`) — Retake and improvement claims with embedded courses
+13. `PreviousResultCourse` (Embedded subdocument in PreviousResult)
+14. `Notice` (`notices`) — Priority bulletins, category filters, target audience
+15. `Assignment` (`assignments`) — Homework tasks, submission deadlines, total points
+16. `AssignmentSubmission` (`assignment_submissions`) — Student file submissions, grading, feedback
+17. `StudyMaterial` (`study_materials`) — Lecture notes, slides, modules, download metrics
+18. `OTPVerification` — 6-digit hashed OTP, 5-minute TTL expiration, max 5 attempts, 60s resend cooldown
 
 ---
 
-## 🚀 Local Development Setup
+## 🚀 Running the Full-Stack Application
 
 ```bash
-# 1. Install dependencies
+# Install dependencies
 npm install
 
-# 2. Run Vite dev server
+# Run full-stack dev server (Express API on /api and Vite React Frontend on port 3000)
 npm run dev
+
+# Seed MongoDB database with initial sample records
+npm run seed
+
+# Build production bundle
+npm run build
 ```
 
-Application runs at `http://localhost:3000`.
+---
+
+## ⚡ Default Demo Credentials
+
+| Role | Name | Institutional Email | Password |
+|---|---|---|---|
+| **Student** | Fathin Sadman | `student@metrouni.edu.bd` | `student123` |
+| **Teacher** | Dr. Fahim Ahmed | `teacher@metrouni.edu.bd` | `teacher123` |
+| **Admin** | Prof. Dr. M. Rahman | `admin@metrouni.edu.bd` | `admin123` |
+
+---
+
+## 🔒 Security Hardening
+
+* **Helmet:** Security headers enabled.
+* **CORS:** Controlled origin and method configurations.
+* **Rate Limiting:** General API limiter (300 req/15m) and Auth limiter (50 req/15m).
+* **Passwords:** 10 rounds bcrypt hashing.
+* **JWT:** Standard HS256 tokens with 24-hour expiration.
+* **Secrets:** Strict avoidance of exposing hashes, tokens, or credentials in responses.

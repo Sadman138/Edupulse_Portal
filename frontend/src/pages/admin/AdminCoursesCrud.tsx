@@ -78,10 +78,16 @@ export const AdminCoursesCrud: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2
+            style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+            className="text-xl sm:text-2xl font-black tracking-tight"
+          >
             Academic Courses Catalog (CRUD)
           </h2>
-          <p className="text-xs text-slate-400">
+          <p
+            style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}
+            className="text-xs font-semibold"
+          >
             Define course syllabus units, credit weightage, and faculty departments
           </p>
         </div>

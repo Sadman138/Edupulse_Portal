@@ -14,10 +14,12 @@ import {
 import { PreviousResultSubmission } from '../../types';
 
 export const TeacherVerificationDesk: React.FC = () => {
-  const { previousResults, verifyResultSubmission, setPdfModalDoc } = useApp();
+  const { previousResults, verifyResultSubmission, setPdfModalDoc, theme } = useApp();
   const [selectedSub, setSelectedSub] = useState<PreviousResultSubmission | null>(null);
   const [actionType, setActionType] = useState<'VERIFIED' | 'REJECTED'>('VERIFIED');
   const [remarks, setRemarks] = useState('Official grade sheet cross-checked with Examination Controller roster.');
+
+  const isLight = theme?.mode === 'light';
 
   const handleAction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +35,16 @@ export const TeacherVerificationDesk: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+        <h2
+          style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+          className="text-xl sm:text-2xl font-black tracking-tight"
+        >
           Advisor Grade Verification & Retake Clearance Desk
         </h2>
-        <p className="text-xs text-slate-400">
+        <p
+          style={{ color: isLight ? '#334155' : 'var(--ep-text-secondary, #94a3b8)' }}
+          className="text-xs font-semibold"
+        >
           Inspect student grade claims, backlog improvement submissions, and authorize CGPA updates
         </p>
       </div>
@@ -62,30 +70,68 @@ export const TeacherVerificationDesk: React.FC = () => {
       </div>
 
       {/* Pending Queue Table */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl space-y-4 p-5">
-        <h3 className="font-bold text-white text-base">Pending Student Submissions Queue</h3>
+      <div
+        style={{
+          backgroundColor: isLight ? '#ffffff' : 'var(--ep-bg-card, #111827)',
+          borderColor: isLight ? '#cbd5e1' : 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="rounded-2xl border overflow-hidden shadow-xl space-y-4 p-5"
+      >
+        <h3
+          style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+          className="font-black text-base"
+        >
+          Pending Student Submissions Queue
+        </h3>
 
         {pendingList.length === 0 ? (
-          <p className="text-xs text-slate-500 py-4 text-center">No pending result submissions in queue.</p>
+          <p className="text-xs text-slate-500 py-4 text-center font-bold">No pending result submissions in queue.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <thead
+                style={{
+                  backgroundColor: isLight ? '#f1f5f9' : 'rgba(15, 23, 42, 0.8)',
+                  borderColor: isLight ? '#cbd5e1' : '#1e293b',
+                  color: isLight ? '#0f172a' : '#94a3b8'
+                }}
+                className="uppercase tracking-wider font-extrabold border-b text-[11px]"
+              >
                 <tr>
-                  <th className="px-4 py-3">Student ID & Name</th>
-                  <th className="px-4 py-3">Claimed Semester</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Claimed Credits & GPA</th>
-                  <th className="px-4 py-3">Attached Document</th>
-                  <th className="px-4 py-3 text-right">Review Action</th>
+                  <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Student ID & Name</th>
+                  <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Claimed Semester</th>
+                  <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Type</th>
+                  <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Claimed Credits & GPA</th>
+                  <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Attached Document</th>
+                  <th className="px-4 py-3 text-right" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Review Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              <tbody
+                className="divide-y"
+                style={{
+                  borderColor: isLight ? '#e2e8f0' : 'rgba(30, 41, 59, 0.8)'
+                }}
+              >
                 {pendingList.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                  <tr
+                    key={item.id}
+                    className={`transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/40'}`}
+                  >
                     <td className="px-4 py-3.5">
-                      <p className="font-bold text-white">{item.studentName}</p>
-                      <p className="font-mono text-indigo-400 text-[11px]">{item.studentId}</p>
+                      <p
+                        data-student-name="true"
+                        className="student-name font-black text-sm"
+                        style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+                      >
+                        {item.studentName}
+                      </p>
+                      <p
+                        data-student-id="true"
+                        className="student-id font-mono text-[11px] font-black mt-0.5"
+                        style={{ color: isLight ? '#312e81' : 'var(--ep-accent-secondary, #818cf8)' }}
+                      >
+                        {item.studentId}
+                      </p>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-slate-200">
                       {item.semesterName}
@@ -147,31 +193,86 @@ export const TeacherVerificationDesk: React.FC = () => {
       </div>
 
       {/* Historical Verification Ledger */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl p-5 space-y-3">
-        <h3 className="font-bold text-white text-base">Archived Verification Decisions</h3>
+      <div
+        style={{
+          backgroundColor: isLight ? '#ffffff' : 'var(--ep-bg-card, #111827)',
+          borderColor: isLight ? '#cbd5e1' : 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="rounded-2xl border overflow-hidden shadow-xl p-5 space-y-3"
+      >
+        <h3
+          style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+          className="font-black text-base"
+        >
+          Archived Verification Decisions
+        </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <thead
+              style={{
+                backgroundColor: isLight ? '#f1f5f9' : 'rgba(15, 23, 42, 0.8)',
+                borderColor: isLight ? '#cbd5e1' : '#1e293b',
+                color: isLight ? '#0f172a' : '#94a3b8'
+              }}
+              className="uppercase tracking-wider font-extrabold border-b text-[11px]"
+            >
               <tr>
-                <th className="px-4 py-3">Student Name & ID</th>
-                <th className="px-4 py-3">Semester</th>
-                <th className="px-4 py-3">Result GPA</th>
-                <th className="px-4 py-3">Verified By</th>
-                <th className="px-4 py-3">Decision Remarks</th>
-                <th className="px-4 py-3 text-right">Status</th>
+                <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Student Name & ID</th>
+                <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Semester</th>
+                <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Result GPA</th>
+                <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Verified By</th>
+                <th className="px-4 py-3" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Decision Remarks</th>
+                <th className="px-4 py-3 text-right" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+            <tbody
+              className="divide-y"
+              style={{
+                borderColor: isLight ? '#e2e8f0' : 'rgba(30, 41, 59, 0.8)'
+              }}
+            >
               {verifiedList.map(item => (
-                <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={item.id}
+                  className={`transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/40'}`}
+                >
                   <td className="px-4 py-3">
-                    <p className="font-bold text-white">{item.studentName}</p>
-                    <p className="font-mono text-slate-400 text-[11px]">{item.studentId}</p>
+                    <p
+                      data-student-name="true"
+                      className="student-name font-black text-sm"
+                      style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+                    >
+                      {item.studentName}
+                    </p>
+                    <p
+                      data-student-id="true"
+                      className="student-id font-mono text-[11px] font-black mt-0.5"
+                      style={{ color: isLight ? '#312e81' : 'var(--ep-accent-secondary, #94a3b8)' }}
+                    >
+                      {item.studentId}
+                    </p>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-slate-300">{item.semesterName}</td>
-                  <td className="px-4 py-3 font-mono font-bold text-emerald-400">{item.gpa.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-slate-400">{item.verifiedBy || 'Dr. Tariqul Islam'}</td>
-                  <td className="px-4 py-3 text-slate-400 text-[11px] italic max-w-xs">{item.remarks}</td>
+                  <td
+                    className="px-4 py-3 font-black text-sm"
+                    style={{ color: isLight ? '#0f172a' : '#e2e8f0' }}
+                  >
+                    {item.semesterName}
+                  </td>
+                  <td className="px-4 py-3 font-mono font-black text-emerald-600">
+                    {item.gpa.toFixed(2)}
+                  </td>
+                  <td
+                    className="px-4 py-3 font-bold"
+                    style={{ color: isLight ? '#334155' : '#cbd5e1' }}
+                  >
+                    {item.verifiedBy || 'Dr. Tariqul Islam'}
+                  </td>
+                  <td
+                    className="px-4 py-3 text-[11px] italic max-w-xs font-semibold"
+                    style={{ color: isLight ? '#475569' : '#94a3b8' }}
+                  >
+                    {item.remarks}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <StatusBadge status={item.status} />
                   </td>

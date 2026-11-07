@@ -15,10 +15,12 @@ import {
 import { StudentRosterItem } from '../../types';
 
 export const TeacherCourseDirectory: React.FC = () => {
-  const { teacherRoster } = useApp();
+  const { teacherRoster, theme } = useApp();
   const [selectedSection, setSelectedSection] = useState<'ALL' | 'A' | 'B'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStudentModal, setActiveStudentModal] = useState<StudentRosterItem | null>(null);
+
+  const isLight = theme?.mode === 'light';
 
   const filtered = teacherRoster.filter(s => {
     if (selectedSection !== 'ALL' && s.section !== selectedSection) return false;
@@ -33,10 +35,13 @@ export const TeacherCourseDirectory: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2
+            style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+            className="text-xl sm:text-2xl font-black tracking-tight"
+          >
             Course & Enrolled Student Directory
           </h2>
-          <p className="text-xs text-slate-400">
+          <p style={{ color: 'var(--ep-text-secondary, #94a3b8)' }} className="text-xs font-semibold">
             CSE 311: Database Management Systems • Enrolled Roster & Risk Profiles
           </p>
         </div>
@@ -54,18 +59,30 @@ export const TeacherCourseDirectory: React.FC = () => {
             a.click();
             document.body.removeChild(a);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors w-fit"
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors w-fit shadow-xs ${
+            isLight
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+          }`}
         >
-          <Download className="w-4 h-4 text-emerald-400" />
+          <Download className="w-4 h-4 text-emerald-500" />
           <span>Export Directory (CSV)</span>
         </button>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-[#111827] border border-slate-800">
+      <div
+        style={{
+          backgroundColor: 'var(--ep-bg-card, #111827)',
+          borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl border shadow-sm"
+      >
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-bold text-slate-300">Filter Section:</span>
+          <Filter className="w-4 h-4 text-emerald-500" />
+          <span className="text-xs font-extrabold" style={{ color: isLight ? '#0f172a' : '#cbd5e1' }}>
+            Filter Section:
+          </span>
           {(['ALL', 'A', 'B'] as const).map(sec => (
             <button
               key={sec}
@@ -73,6 +90,8 @@ export const TeacherCourseDirectory: React.FC = () => {
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedSection === sec
                   ? 'bg-emerald-600 text-white shadow-md'
+                  : isLight
+                  ? 'bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200'
                   : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -88,38 +107,77 @@ export const TeacherCourseDirectory: React.FC = () => {
             placeholder="Search by ID or name..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+              isLight
+                ? 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-500 shadow-2xs'
+                : 'bg-slate-900 border border-slate-700 text-white'
+            }`}
           />
         </div>
       </div>
 
       {/* Directory Table */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
+      <div
+        style={{
+          backgroundColor: isLight ? '#ffffff' : 'var(--ep-bg-card, #111827)',
+          borderColor: isLight ? '#cbd5e1' : 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="rounded-2xl border overflow-hidden shadow-xl"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <thead
+              style={{
+                backgroundColor: isLight ? '#f1f5f9' : 'rgba(15, 23, 42, 0.8)',
+                borderColor: isLight ? '#cbd5e1' : '#1e293b'
+              }}
+              className="uppercase tracking-wider font-extrabold border-b text-[11px]"
+            >
               <tr>
-                <th className="px-5 py-3.5">Student ID & Name</th>
-                <th className="px-4 py-3.5">Section</th>
-                <th className="px-4 py-3.5">Attendance Rate</th>
-                <th className="px-4 py-3.5">Continuous Marks</th>
-                <th className="px-4 py-3.5">Risk Health</th>
-                <th className="px-5 py-3.5 text-right">Details</th>
+                <th className="px-5 py-3.5" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Student ID & Name</th>
+                <th className="px-4 py-3.5" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Section</th>
+                <th className="px-4 py-3.5" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Attendance Rate</th>
+                <th className="px-4 py-3.5" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Continuous Marks</th>
+                <th className="px-4 py-3.5" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Risk Health</th>
+                <th className="px-5 py-3.5 text-right" style={{ color: isLight ? '#0f172a' : '#94a3b8' }}>Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+            <tbody
+              className="divide-y"
+              style={{
+                borderColor: isLight ? '#e2e8f0' : 'rgba(30, 41, 59, 0.8)'
+              }}
+            >
               {filtered.map(student => (
-                <tr key={student.studentId} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={student.studentId}
+                  className={`transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/40'}`}
+                >
                   <td className="px-5 py-4">
-                    <p className="font-bold text-white text-sm">{student.studentName}</p>
-                    <p className="font-mono text-xs text-indigo-400">{student.studentId}</p>
+                    <p
+                      data-student-name="true"
+                      className="student-name font-black text-sm"
+                      style={{ color: isLight ? '#0f172a' : 'var(--ep-text-primary, #ffffff)' }}
+                    >
+                      {student.studentName || 'Student Name'}
+                    </p>
+                    <p
+                      data-student-id="true"
+                      className="student-id font-mono text-xs font-black mt-0.5"
+                      style={{ color: isLight ? '#312e81' : 'var(--ep-accent-secondary, #818cf8)' }}
+                    >
+                      {student.studentId}
+                    </p>
                   </td>
-                  <td className="px-4 py-4 font-semibold text-slate-200">
+                  <td
+                    className="px-4 py-4 font-black text-sm"
+                    style={{ color: isLight ? '#0f172a' : '#e2e8f0' }}
+                  >
                     Section {student.section}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div className={`w-20 h-2 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`}>
                         <div
                           className={`h-full rounded-full ${
                             student.attendanceRate >= 75 ? 'bg-emerald-500' : 'bg-rose-500'
@@ -127,12 +185,15 @@ export const TeacherCourseDirectory: React.FC = () => {
                           style={{ width: `${student.attendanceRate}%` }}
                         />
                       </div>
-                      <span className={`font-mono font-bold ${student.attendanceRate >= 75 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <span className={`font-mono font-black ${student.attendanceRate >= 75 ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-rose-700' : 'text-rose-400')}`}>
                         {student.attendanceRate}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-4 font-mono font-bold text-slate-200">
+                  <td
+                    className="px-4 py-4 font-mono font-extrabold text-sm"
+                    style={{ color: isLight ? '#0f172a' : '#e2e8f0' }}
+                  >
                     {student.currentMarks} / 100
                   </td>
                   <td className="px-4 py-4">
@@ -141,7 +202,11 @@ export const TeacherCourseDirectory: React.FC = () => {
                   <td className="px-5 py-4 text-right">
                     <button
                       onClick={() => setActiveStudentModal(student)}
-                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      className={`p-2 rounded-xl transition-all cursor-pointer ${
+                        isLight
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
+                      }`}
                       title="Inspect Student Profile"
                     >
                       <Eye className="w-4 h-4" />
@@ -157,49 +222,67 @@ export const TeacherCourseDirectory: React.FC = () => {
       {/* Student Details Modal */}
       {activeStudentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="bg-[#111827] border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div
+            style={{
+              backgroundColor: isLight ? '#ffffff' : '#111827',
+              borderColor: isLight ? '#cbd5e1' : '#334155'
+            }}
+            className="border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl"
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: isLight ? '#e2e8f0' : '#1e293b' }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                   {activeStudentModal.studentName.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">{activeStudentModal.studentName}</h3>
-                  <p className="text-xs text-slate-400 font-mono">ID: {activeStudentModal.studentId}</p>
+                  <h3
+                    className="font-extrabold text-base"
+                    style={{ color: isLight ? '#0f172a' : '#ffffff' }}
+                  >
+                    {activeStudentModal.studentName}
+                  </h3>
+                  <p
+                    className="text-xs font-mono font-bold"
+                    style={{ color: isLight ? '#4338ca' : '#818cf8' }}
+                  >
+                    ID: {activeStudentModal.studentId}
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveStudentModal(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  isLight ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-900' : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <p className="text-slate-400">Institutional Email</p>
-                <p className="font-semibold text-white mt-0.5 truncate">{activeStudentModal.email}</p>
+              <div className={`p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+                <p className={isLight ? 'text-slate-600 font-bold' : 'text-slate-400'}>Institutional Email</p>
+                <p className={`font-bold mt-0.5 truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{activeStudentModal.email}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <p className="text-slate-400">Enrolled Section</p>
-                <p className="font-semibold text-white mt-0.5">Section {activeStudentModal.section}</p>
+              <div className={`p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+                <p className={isLight ? 'text-slate-600 font-bold' : 'text-slate-400'}>Enrolled Section</p>
+                <p className={`font-bold mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>Section {activeStudentModal.section}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <p className="text-slate-400">Attendance Percentage</p>
-                <p className={`font-bold mt-0.5 ${activeStudentModal.attendanceRate >= 75 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <div className={`p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+                <p className={isLight ? 'text-slate-600 font-bold' : 'text-slate-400'}>Attendance Percentage</p>
+                <p className={`font-black mt-0.5 ${activeStudentModal.attendanceRate >= 75 ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-rose-700' : 'text-rose-400')}`}>
                   {activeStudentModal.attendanceRate}% ({activeStudentModal.attendanceRate < 75 ? 'Debarment Risk' : 'Eligible'})
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <p className="text-slate-400">Continuous Assessment</p>
-                <p className="font-bold text-indigo-400 mt-0.5">{activeStudentModal.currentMarks} / 100 Marks</p>
+              <div className={`p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+                <p className={isLight ? 'text-slate-600 font-bold' : 'text-slate-400'}>Continuous Assessment</p>
+                <p className={`font-black mt-0.5 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`}>{activeStudentModal.currentMarks} / 100 Marks</p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs space-y-1">
-              <p className="font-semibold text-slate-300">Advisor Diagnostic Notes:</p>
-              <p className="text-slate-400 leading-relaxed">
+            <div className={`p-3.5 rounded-xl border text-xs space-y-1 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900/60 border-slate-800'}`}>
+              <p className={`font-bold ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>Advisor Diagnostic Notes:</p>
+              <p className={`leading-relaxed ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
                 {activeStudentModal.riskLevel === 'CRITICAL'
                   ? 'Attendance has fallen below the 75% university eligibility line. Recommended to dispatch counseling warning or schedule guardian interview.'
                   : 'Student is in good academic standing. Regular attendance and consistent quiz performance recorded.'}
@@ -209,7 +292,9 @@ export const TeacherCourseDirectory: React.FC = () => {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setActiveStudentModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs"
+                className={`px-4 py-2 rounded-xl font-bold text-xs cursor-pointer ${
+                  isLight ? 'bg-slate-200 hover:bg-slate-300 text-slate-900' : 'bg-slate-800 hover:bg-slate-700 text-white'
+                }`}
               >
                 Close Profile
               </button>

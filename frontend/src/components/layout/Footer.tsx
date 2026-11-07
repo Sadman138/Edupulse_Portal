@@ -1,6 +1,7 @@
 import React from 'react';
-import { Zap, BookOpen, Building, MapPin, Mail, ChevronRight } from 'lucide-react';
+import { BookOpen, Building, MapPin, Mail, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { EduPulseLogo } from '../common/EduPulseLogo';
 
 export const Footer: React.FC = () => {
   const { currentUser, setActiveTab } = useApp();
@@ -10,16 +11,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Column 1: Brand & Philosophy */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20">
-              <Zap className="w-4 h-4 fill-slate-950" />
-            </div>
-            <div>
-              <span className="font-extrabold text-white text-base tracking-tight">
-                EduPulse Platform
-              </span>
-            </div>
-          </div>
+          <EduPulseLogo size="sm" showSubtitle={false} />
           <p className="text-[11px] font-bold text-cyan-400">
             Academic Governance & Monitoring Architecture
           </p>

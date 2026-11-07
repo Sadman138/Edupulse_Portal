@@ -87,10 +87,16 @@ export const AdminAccountApprovals: React.FC = () => {
             <UserCheck className="w-4 h-4" />
             <span>Central Security & Identity Governance</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">
+          <h1
+            style={{ color: 'var(--ep-text-primary, #ffffff)' }}
+            className="text-xl sm:text-2xl font-black"
+          >
             Account Approval Desk
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p
+            style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}
+            className="text-xs font-semibold mt-1"
+          >
             Review, verify, and approve new user registrations from Google OAuth and institutional sign-ups before allowing portal access.
           </p>
         </div>

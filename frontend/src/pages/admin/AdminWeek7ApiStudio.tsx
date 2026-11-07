@@ -18,7 +18,7 @@ import {
   Code2
 } from 'lucide-react';
 import { RBAC_PERMISSIONS_CATALOG, PermissionDefinition } from '../../../../backend/src/config/rbac.matrix';
-import { generateAccessToken, verifyAccessToken } from '../../../../backend/src/services/jwt.service';
+import { generateAccessToken, verifyAccessToken } from '../../utils/clientJwt';
 
 interface ApiEndpointPreset {
   name: string;

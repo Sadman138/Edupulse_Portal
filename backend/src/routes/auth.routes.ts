@@ -9,7 +9,10 @@ import {
   registerHandler,
   sendOtpHandler,
   verifyOtpHandler,
-  meHandler
+  forgotPasswordHandler,
+  resetPasswordHandler,
+  getCurrentUserHandler,
+  logoutHandler
 } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/rbac.middleware';
 
@@ -20,8 +23,11 @@ router.post('/login', loginHandler);
 router.post('/register', registerHandler);
 router.post('/send-otp', sendOtpHandler);
 router.post('/verify-otp', verifyOtpHandler);
+router.post('/forgot-password', forgotPasswordHandler);
+router.post('/reset-password', resetPasswordHandler);
+router.post('/logout', logoutHandler);
 
-// Protected Auth Endpoints (Requires valid JWT Bearer token)
-router.get('/me', authenticateToken, meHandler);
+// Protected Auth Endpoints (Requires valid JWT Bearer token or cookie)
+router.get('/me', authenticateToken, getCurrentUserHandler);
 
 export default router;

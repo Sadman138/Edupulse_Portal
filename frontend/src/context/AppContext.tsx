@@ -19,7 +19,11 @@ import {
   CourseAllocationItem,
   QrAttendanceSession,
   StudentRosterItem,
-  RegisteredUser
+  RegisteredUser,
+  SyllabusChapter,
+  SyllabusTopic,
+  SyllabusTopicStatus,
+  UpcomingExamItem
 } from '../types';
 import {
   DEMO_USERS,
@@ -39,15 +43,21 @@ import {
   INITIAL_INSTRUCTORS,
   INITIAL_ADMIN_COURSES,
   INITIAL_STUDENTS_REGISTRY,
-  INITIAL_COURSE_ALLOCATIONS
+  INITIAL_COURSE_ALLOCATIONS,
+  INITIAL_SYLLABUS_CHAPTERS,
+  INITIAL_UPCOMING_EXAMINATIONS
 } from '../data/mockData';
-import { ThemeConfig, DEFAULT_THEME } from '../theme/epTheme';
+import { ThemeConfig, DEFAULT_THEME, getThemeBackground, getThemeById, EDU_PULSE_THEMES, EduPulseTheme } from '../theme/epTheme';
+import { authApi, adminApi } from '../services/api';
+
+export type AuthStatus = 'INITIALIZING' | 'AUTHENTICATED' | 'UNAUTHENTICATED';
 
 interface AppContextType {
   // Auth & Role
   currentUser: UserProfile;
   switchRole: (role: UserRole) => void;
   isAuthenticated: boolean;
+  authStatus: AuthStatus;
   pendingApprovalUser: RegisteredUser | null;
   clearPendingApproval: () => void;
   approveUser: (userId: string) => void;
@@ -59,7 +69,7 @@ interface AppContextType {
     role?: UserRole,
     password?: string,
     customProfile?: Partial<UserProfile>
-  ) => { success: boolean; error?: string; pending?: boolean };
+  ) => Promise<{ success: boolean; error?: string; pending?: boolean }>;
   loginWithGoogle: (
     googleProfile: {
       name: string;
@@ -73,7 +83,7 @@ interface AppContextType {
       department?: string;
     },
     isSignUp?: boolean
-  ) => { success: boolean; error?: string; pending?: boolean };
+  ) => Promise<{ success: boolean; error?: string; pending?: boolean }>;
   registerAccount: (accountData: {
     name: string;
     email: string;
@@ -86,6 +96,7 @@ interface AppContextType {
     department?: string;
     authProvider: 'GOOGLE' | 'EMAIL';
   }) => { success: boolean; pending: boolean; error?: string };
+  resetUserPassword: (email: string, newPassword: string) => void;
   logout: () => void;
   registeredUsers: RegisteredUser[];
 
@@ -111,10 +122,28 @@ interface AppContextType {
   routine: ClassRoutineItem[];
 
   // Student Actions
-  submitAssignment: (assignmentId: string, fileName: string) => void;
+  submitAssignment: (assignmentId: string, fileName: string, pdfDataUrl?: string) => void;
   submitPreviousResult: (submission: Omit<PreviousResultSubmission, 'id' | 'submissionDate' | 'status'>) => void;
   addCoCurricular: (item: Omit<CoCurricularActivity, 'id' | 'status'>) => void;
   recordQrAttendance: (courseCode: string, token: string) => { success: boolean; message: string };
+
+  // Syllabus Tracker & Exams (Sections 2 & 7)
+  syllabusChapters: SyllabusChapter[];
+  updateTopicStatus: (
+    chapterId: string,
+    topicId: string,
+    status: SyllabusTopicStatus,
+    teachingNotes?: string,
+    completedDate?: string
+  ) => void;
+  addSyllabusChapter: (
+    chapter: Omit<SyllabusChapter, 'id' | 'topics'> & { topics?: Omit<SyllabusTopic, 'id'>[] }
+  ) => void;
+  addSyllabusTopic: (chapterId: string, topic: Omit<SyllabusTopic, 'id'>) => void;
+  upcomingExams: UpcomingExamItem[];
+  addUpcomingExam: (exam: Omit<UpcomingExamItem, 'id'>) => void;
+  updateUpcomingExam: (examId: string, updates: Partial<UpcomingExamItem>) => void;
+  extendAssignmentDeadline: (assignmentId: string, newDueDate: string, reason: string) => void;
 
   // Teacher State & Actions
   teacherRoster: StudentRosterItem[];
@@ -132,6 +161,7 @@ interface AppContextType {
   verifyResultSubmission: (submissionId: string, status: 'VERIFIED' | 'REJECTED', remarks: string) => void;
   highRiskAlerts: HighRiskAlert[];
   updateHighRiskStatus: (alertId: string, status: HighRiskAlert['status'], note: string) => void;
+  sendAdvisorWarningNotification: (studentId: string, courseCode: string, note?: string) => void;
 
   // Admin State & Actions
   departments: DepartmentItem[];
@@ -175,8 +205,10 @@ interface AppContextType {
   setIsThemeModalOpen: (open: boolean) => void;
   isSwitchAccountModalOpen: boolean;
   setIsSwitchAccountModalOpen: (open: boolean) => void;
-  pdfModalDoc: { title: string; category?: string; content?: string } | null;
-  setPdfModalDoc: (doc: { title: string; category?: string; content?: string } | null) => void;
+  isMobileNavOpen: boolean;
+  setIsMobileNavOpen: (open: boolean) => void;
+  pdfModalDoc: { title: string; category?: string; content?: string; pdfUrl?: string; fileName?: string } | null;
+  setPdfModalDoc: (doc: { title: string; category?: string; content?: string; pdfUrl?: string; fileName?: string } | null) => void;
 }
 
 const ROLE_ALLOWED_TABS: Record<UserRole, string[]> = {
@@ -215,10 +247,7 @@ const ROLE_ALLOWED_TABS: Record<UserRole, string[]> = {
     'admin-courses',
     'admin-instructors',
     'admin-students',
-    'admin-allocations',
-    'admin-database',
-    'admin-week6-db',
-    'admin-api-studio'
+    'admin-allocations'
   ]
 };
 
@@ -232,44 +261,44 @@ const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
   // Demo Student Account (Pre-approved)
   {
     id: 'usr_demo_student',
-    name: 'Fathin Sadman',
+    name: 'Fathin Anzum Sadman',
     email: 'student@metrouni.edu.bd',
     role: 'STUDENT',
     authProvider: 'EMAIL',
     status: 'APPROVED',
     password: 'student123',
     studentId: '241-115-211',
-    batch: '61st Batch',
-    section: 'Section A',
+    batch: '60th Batch',
+    section: 'Section E',
     department: 'CSE',
     createdAt: '2026-10-10 09:15 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
   },
   {
     id: 'usr_demo_student_alias',
-    name: 'Fathin Sadman',
+    name: 'Fathin Anzum Sadman',
     email: 'student@edupulse.edu',
     role: 'STUDENT',
     authProvider: 'EMAIL',
     status: 'APPROVED',
     password: 'student123',
     studentId: '241-115-211',
-    batch: '61st Batch',
-    section: 'Section A',
+    batch: '60th Batch',
+    section: 'Section E',
     department: 'CSE',
     createdAt: '2026-10-10 09:15 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
   },
   {
     id: 'usr_g_student',
-    name: 'Fathin Sadman',
+    name: 'Fathin Anzum Sadman',
     email: 'fathinanzumsadman@gmail.com',
     role: 'STUDENT',
     authProvider: 'GOOGLE',
     status: 'APPROVED',
     studentId: '241-115-211',
-    batch: '61st Batch',
-    section: 'Section A',
+    batch: '60th Batch',
+    section: 'Section E',
     department: 'CSE',
     createdAt: '2026-10-10 09:00 AM',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
@@ -418,11 +447,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // ensure every user has a status
-          return parsed.map((u: any) => ({
-            ...u,
-            status: u.status || 'APPROVED'
-          }));
+          // ensure every user has a status and update Fathin's details
+          return parsed.map((u: any) => {
+            if (u.role === 'STUDENT' && (u.name?.includes('Fathin') || u.studentId === '241-115-211' || u.email === 'student@metrouni.edu.bd' || u.email === 'fathinanzumsadman@gmail.com')) {
+              return {
+                ...u,
+                name: 'Fathin Anzum Sadman',
+                batch: '60th Batch',
+                section: 'Section E',
+                status: u.status || 'APPROVED'
+              };
+            }
+            return {
+              ...u,
+              status: u.status || 'APPROVED'
+            };
+          });
         }
       }
       return DEFAULT_REGISTERED_USERS;
@@ -465,6 +505,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Admin approval actions
   const approveUser = (userId: string) => {
+    adminApi.approveUser(userId).catch(() => null);
     const updated = registeredUsers.map(u => (u.id === userId ? { ...u, status: 'APPROVED' as const } : u));
     saveRegisteredUsers(updated);
     if (pendingApprovalUser?.id === userId) {
@@ -473,6 +514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const rejectUser = (userId: string, reason?: string) => {
+    adminApi.rejectUser(userId, reason).catch(() => null);
     const updated = registeredUsers.map(u =>
       u.id === userId
         ? { ...u, status: 'REJECTED' as const, rejectionReason: reason || 'Application rejected by Admin.' }
@@ -482,6 +524,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteUser = (userId: string) => {
+    adminApi.deleteUser(userId).catch(() => null);
     const updated = registeredUsers.filter(u => u.id !== userId);
     saveRegisteredUsers(updated);
     if (pendingApprovalUser?.id === userId) {
@@ -489,23 +532,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // User Auth & Role with session persistence
+  // Auth state & session initialization lifecycle
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('INITIALIZING');
+
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     try {
       const savedUser = localStorage.getItem('edupulse_user');
-      return savedUser ? JSON.parse(savedUser) : DEMO_USERS.student;
+      const authFlag = localStorage.getItem('edupulse_auth');
+      if (authFlag === 'true' && savedUser) {
+        return JSON.parse(savedUser);
+      }
     } catch {
-      return DEMO_USERS.student;
+      // Ignore parse errors on startup
     }
+    return DEMO_USERS.student;
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const authFlag = localStorage.getItem('edupulse_auth');
-    return authFlag !== null ? authFlag === 'true' : true;
+    return authFlag === 'true';
   });
 
   const [activeTab, setActiveTabRaw] = useState<string>(() => {
-    return ROLE_DEFAULT_TAB[currentUser.role] || 'dashboard';
+    try {
+      const savedUser = localStorage.getItem('edupulse_user');
+      const authFlag = localStorage.getItem('edupulse_auth');
+      if (authFlag === 'true' && savedUser) {
+        const u = JSON.parse(savedUser);
+        if (u.role && ROLE_DEFAULT_TAB[u.role as UserRole]) {
+          return ROLE_DEFAULT_TAB[u.role as UserRole];
+        }
+      }
+    } catch {}
+    return 'dashboard';
   });
 
   const [unauthorizedAttempt, setUnauthorizedAttempt] = useState<{ attemptedTab: string; userRole: UserRole } | null>(null);
@@ -515,6 +574,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isTabAllowedForRole = (tab: string, role: UserRole) => {
     return ROLE_ALLOWED_TABS[role]?.includes(tab) ?? false;
   };
+
+  // Startup Auth Verification against Backend (JWT / Cookie Session)
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function verifyAuthSession() {
+      try {
+        const res = await authApi.getCurrentUser();
+        if (isCancelled) return;
+
+        if (res?.success && res?.user) {
+          const u = res.user;
+          const restoredRole = (u.role as UserRole) || 'STUDENT';
+          const restoredProfile: UserProfile = {
+            id: u.id || u.userId || `usr_${Date.now()}`,
+            name: u.name || 'EduPulse User',
+            email: u.email,
+            role: restoredRole,
+            status: (u.status || 'APPROVED') as any,
+            authProvider: u.authProvider || 'EMAIL',
+            isEmailVerified: u.isEmailVerified !== false,
+            studentId: u.studentId,
+            employeeId: u.employeeId,
+            department: u.department || 'CSE',
+            departmentName: 'Computer Science & Engineering',
+            institution: 'Metropolitan University, Sylhet',
+            batch: u.batch,
+            section: u.section,
+            avatarUrl: u.avatarUrl || (DEMO_USERS[restoredRole.toLowerCase() as keyof typeof DEMO_USERS]?.avatarUrl)
+          };
+
+          setCurrentUser(restoredProfile);
+          setIsAuthenticated(true);
+          setAuthStatus('AUTHENTICATED');
+          localStorage.setItem('edupulse_user', JSON.stringify(restoredProfile));
+          localStorage.setItem('edupulse_auth', 'true');
+
+          setActiveTabRaw(prevTab => {
+            if (isTabAllowedForRole(prevTab, restoredRole)) {
+              return prevTab;
+            }
+            return ROLE_DEFAULT_TAB[restoredRole] || 'dashboard';
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('[EduPulse Auth Lifecycle] Backend verification check:', err);
+      }
+
+      if (isCancelled) return;
+
+      // If backend validation did not succeed, verify local persistence fallback
+      const authFlag = localStorage.getItem('edupulse_auth');
+      const savedUser = localStorage.getItem('edupulse_user');
+
+      if (authFlag !== 'true' || !savedUser) {
+        setIsAuthenticated(false);
+        setAuthStatus('UNAUTHENTICATED');
+        localStorage.removeItem('edupulse_auth');
+        localStorage.removeItem('edupulse_user');
+        localStorage.removeItem('edupulse_jwt_token');
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed.role && parsed.email) {
+          setCurrentUser(parsed);
+          setIsAuthenticated(true);
+          setAuthStatus('AUTHENTICATED');
+          setActiveTabRaw(prevTab => {
+            if (isTabAllowedForRole(prevTab, parsed.role)) {
+              return prevTab;
+            }
+            return ROLE_DEFAULT_TAB[parsed.role as UserRole] || 'dashboard';
+          });
+          return;
+        }
+      } catch {}
+
+      // Corrupt session data
+      setIsAuthenticated(false);
+      setAuthStatus('UNAUTHENTICATED');
+      localStorage.removeItem('edupulse_auth');
+      localStorage.removeItem('edupulse_user');
+      localStorage.removeItem('edupulse_jwt_token');
+    }
+
+    verifyAuthSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Always keep activeTab within the authorized scope of currentUser.role
   useEffect(() => {
@@ -540,16 +693,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const login = (
+  const login = async (
     email: string,
     role?: UserRole,
     password?: string,
     customProfile?: Partial<UserProfile>
-  ): { success: boolean; error?: string; pending?: boolean } => {
+  ): Promise<{ success: boolean; error?: string; pending?: boolean }> => {
     const cleanEmail = email.trim().toLowerCase();
-    const existing = registeredUsers.find(u => u.email.trim().toLowerCase() === cleanEmail);
 
-    // 1. Unregistered email check
+    // 1. Authenticate against real Express + MongoDB Atlas backend
+    try {
+      const res = await authApi.login(cleanEmail, password, role);
+
+      if (res && res.success === true && res.user) {
+        const u = res.user;
+        const effectiveRole = (u.role as UserRole) || role || 'STUDENT';
+        const baseProfile = DEMO_USERS[effectiveRole.toLowerCase() as keyof typeof DEMO_USERS] || DEMO_USERS.student;
+
+        const finalProfile: UserProfile = {
+          ...baseProfile,
+          id: u.id || u.userId || `usr_${Date.now()}`,
+          name: u.name || customProfile?.name || baseProfile.name,
+          email: u.email || cleanEmail,
+          role: effectiveRole,
+          status: 'APPROVED',
+          authProvider: u.authProvider || 'EMAIL',
+          isEmailVerified: u.isEmailVerified !== false,
+          studentId: u.studentId || (effectiveRole === 'STUDENT' ? baseProfile.studentId : undefined),
+          batch: u.batch || (effectiveRole === 'STUDENT' ? baseProfile.batch || '60th Batch' : undefined),
+          section: u.section || (effectiveRole === 'STUDENT' ? baseProfile.section || 'Section A' : undefined),
+          employeeId: u.employeeId || (effectiveRole !== 'STUDENT' ? baseProfile.employeeId : undefined),
+          department: u.department || baseProfile.department,
+          departmentName: 'Computer Science & Engineering',
+          institution: 'Metropolitan University, Sylhet',
+          avatarUrl: u.avatarUrl || customProfile?.avatarUrl || baseProfile.avatarUrl,
+          ...(customProfile || {})
+        };
+
+        if (res.token) {
+          localStorage.setItem('edupulse_jwt_token', res.token);
+        }
+        localStorage.setItem('edupulse_user', JSON.stringify(finalProfile));
+        localStorage.setItem('edupulse_auth', 'true');
+
+        setCurrentUser(finalProfile);
+        setIsAuthenticated(true);
+        setAuthStatus('AUTHENTICATED');
+        setPendingApprovalUser(null);
+        setUnauthorizedAttempt(null);
+        const targetTab = ROLE_DEFAULT_TAB[effectiveRole] || 'dashboard';
+        setActiveTabRaw(targetTab);
+
+        return { success: true };
+      }
+
+      // If backend explicitly rejected with invalid password, pending, or role mismatch
+      if (res && res.success === false) {
+        if (res.status === 'PENDING') {
+          return {
+            success: false,
+            pending: true,
+            error: res.error || 'Account pending administrator verification.'
+          };
+        }
+        return {
+          success: false,
+          error: res.error || 'Authentication failed. Please check your credentials.'
+        };
+      }
+    } catch (err: any) {
+      console.warn('[EduPulse Backend Login Error]', err);
+    }
+
+    // 2. Fallback to local accounts if backend is temporarily unreachable
+    const existing = registeredUsers.find(u => u.email.trim().toLowerCase() === cleanEmail);
     if (!existing) {
       return {
         success: false,
@@ -557,31 +774,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    // 2. Password check for email accounts
-    if (existing.authProvider === 'EMAIL' && existing.password && password) {
-      const isDemoMatch =
-        existing.password === password ||
-        (existing.role === 'STUDENT' && (password === 'student123' || password === 'password123')) ||
-        (existing.role === 'TEACHER' && (password === 'teacher123' || password === 'password123')) ||
-        (existing.role === 'ADMIN' && (password === 'admin123' || password === 'password123'));
-
-      if (!isDemoMatch) {
+    if (existing.authProvider === 'EMAIL' && existing.password) {
+      if (!password) {
         return {
           success: false,
-          error: 'Incorrect password! Please check your credentials and try again.'
+          error: 'Password is required to sign in to this account.'
+        };
+      }
+
+      const isMatch = existing.password === password;
+
+      if (!isMatch) {
+        return {
+          success: false,
+          error: 'Invalid password. Please check your credentials.'
         };
       }
     }
 
-    // 3. Role mismatch check
     if (role && existing.role !== role) {
       return {
         success: false,
-        error: `Role mismatch! This account is registered as ${existing.role}, not ${role}. Access to this portal is unauthorized.`
+        error: `Role mismatch: This account belongs to role [${existing.role}], not [${role}].`
       };
     }
 
-    // 4. Admin approval check
     if (existing.status === 'PENDING') {
       setPendingApprovalUser(existing);
       setIsAuthenticated(false);
@@ -589,18 +806,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return {
         success: false,
         pending: true,
-        error: 'Account pending administrator approval. Access will be enabled once verified by the Registrar.'
+        error: 'Account pending administrator approval.'
       };
     }
 
     if (existing.status === 'REJECTED') {
       return {
         success: false,
-        error: `Account registration was rejected by Administrator. Reason: ${existing.rejectionReason || 'Contact registrar office.'}`
+        error: `Account registration was rejected by Administrator: ${existing.rejectionReason || 'Contact registrar office.'}`
       };
     }
 
-    // 5. Approved user login
     const effectiveRole = existing.role;
     const baseProfile = DEMO_USERS[effectiveRole.toLowerCase() as keyof typeof DEMO_USERS] || DEMO_USERS.student;
     const finalProfile: UserProfile = {
@@ -611,27 +827,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: effectiveRole,
       status: 'APPROVED',
       authProvider: existing.authProvider,
-      studentId: existing.studentId || (effectiveRole === 'STUDENT' ? baseProfile.studentId : undefined),
-      batch: existing.batch || (effectiveRole === 'STUDENT' ? baseProfile.batch || '61st Batch' : undefined),
-      section: existing.section || (effectiveRole === 'STUDENT' ? 'Section A' : undefined),
-      employeeId: existing.employeeId || (effectiveRole !== 'STUDENT' ? baseProfile.employeeId : undefined),
+      studentId: existing.studentId,
+      batch: existing.batch,
+      section: existing.section,
+      employeeId: existing.employeeId,
       department: existing.department || baseProfile.department,
+      departmentName: 'Computer Science & Engineering',
+      institution: 'Metropolitan University, Sylhet',
       avatarUrl: existing.avatarUrl || customProfile?.avatarUrl || baseProfile.avatarUrl,
       ...(customProfile || {})
     };
 
     setCurrentUser(finalProfile);
     setIsAuthenticated(true);
+    setAuthStatus('AUTHENTICATED');
     setPendingApprovalUser(null);
     setUnauthorizedAttempt(null);
     const targetTab = ROLE_DEFAULT_TAB[effectiveRole] || 'dashboard';
     setActiveTabRaw(targetTab);
     localStorage.setItem('edupulse_user', JSON.stringify(finalProfile));
     localStorage.setItem('edupulse_auth', 'true');
+
     return { success: true };
   };
 
-  const loginWithGoogle = (
+  const loginWithGoogle = async (
     googleProfile: {
       name: string;
       email: string;
@@ -644,7 +864,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       department?: string;
     },
     isSignUp?: boolean
-  ): { success: boolean; error?: string; pending?: boolean } => {
+  ): Promise<{ success: boolean; error?: string; pending?: boolean }> => {
     const cleanEmail = googleProfile.email.trim().toLowerCase();
     const existing = registeredUsers.find(u => u.email.trim().toLowerCase() === cleanEmail);
 
@@ -666,7 +886,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       }
       // Approved existing user!
-      return login(existing.email, existing.role);
+      return await login(existing.email, existing.role);
     }
 
     // User is NOT in registeredUsers
@@ -702,6 +922,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPendingApprovalUser(newUser);
     setIsAuthenticated(false);
     localStorage.removeItem('edupulse_auth');
+
+    // Register with MongoDB Express backend & dispatch welcome email
+    authApi.register({
+      name: googleProfile.name,
+      email: googleProfile.email,
+      role: googleProfile.role,
+      studentId: googleProfile.studentId,
+      batch: googleProfile.batch,
+      section: googleProfile.section,
+      employeeId: googleProfile.employeeId,
+      department: googleProfile.department || 'CSE',
+      authProvider: 'GOOGLE'
+    }).catch(err => {
+      console.warn('[EduPulse Google Register Sync]', err);
+    });
+
     return {
       success: false,
       pending: true,
@@ -731,10 +967,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: accountData.role,
       authProvider: accountData.authProvider,
       status: 'PENDING',
-      password: accountData.password || 'password123',
+      password: accountData.password,
       studentId: accountData.role === 'STUDENT' ? accountData.studentId || '241-115-211' : undefined,
-      batch: accountData.batch || (accountData.role === 'STUDENT' ? '61st Batch' : undefined),
-      section: accountData.section || (accountData.role === 'STUDENT' ? 'Section A' : undefined),
+      batch: accountData.batch || (accountData.role === 'STUDENT' ? '60th Batch' : undefined),
+      section: accountData.section || (accountData.role === 'STUDENT' ? 'Section E' : undefined),
       employeeId:
         accountData.role !== 'STUDENT'
           ? accountData.employeeId || (accountData.role === 'TEACHER' ? 'FAC-CSE-042' : 'REG-ADMIN-01')
@@ -758,6 +994,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPendingApprovalUser(newUser);
     setIsAuthenticated(false);
     localStorage.removeItem('edupulse_auth');
+
+    // Register with MongoDB Express backend
+    authApi.register({
+      name: accountData.name,
+      email: accountData.email,
+      role: accountData.role,
+      password: accountData.password,
+      studentId: accountData.studentId,
+      batch: accountData.batch,
+      section: accountData.section,
+      employeeId: accountData.employeeId,
+      department: accountData.department,
+      authProvider: accountData.authProvider
+    }).catch(err => {
+      console.warn('[EduPulse Backend Register Sync]', err);
+    });
+
     return {
       success: false,
       pending: true,
@@ -766,16 +1019,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    authApi.logout().catch(() => null);
     setIsAuthenticated(false);
+    setAuthStatus('UNAUTHENTICATED');
     setUnauthorizedAttempt(null);
+    setActiveTabRaw('dashboard');
     localStorage.removeItem('edupulse_auth');
+    localStorage.removeItem('edupulse_user');
+    localStorage.removeItem('edupulse_jwt_token');
+    localStorage.removeItem('edupulse_pending_user');
+  };
+
+  const resetUserPassword = (email: string, newPassword: string) => {
+    const clean = email.trim().toLowerCase();
+    const updated = registeredUsers.map(u =>
+      u.email.trim().toLowerCase() === clean ? { ...u, password: newPassword } : u
+    );
+    saveRegisteredUsers(updated);
   };
 
   // Theme State
   const [theme, setTheme] = useState<ThemeConfig>(() => {
     try {
       const saved = localStorage.getItem('edupulse_theme');
-      return saved ? JSON.parse(saved) : DEFAULT_THEME;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const themeDef = getThemeById(parsed.themeId || parsed.backgroundId || 'midnight-emerald');
+        return {
+          ...DEFAULT_THEME,
+          ...parsed,
+          themeId: themeDef.id,
+          accentColor: themeDef.primary,
+          accentName: themeDef.name,
+          primary: themeDef.primary,
+          secondary: themeDef.secondary,
+          gradientStart: themeDef.gradientStart,
+          gradientEnd: themeDef.gradientEnd,
+          glow: themeDef.glow,
+          backgroundId: themeDef.id
+        };
+      }
+      return DEFAULT_THEME;
     } catch {
       return DEFAULT_THEME;
     }
@@ -783,16 +1067,99 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateTheme = (newTheme: Partial<ThemeConfig>) => {
     setTheme(prev => {
-      const updated = { ...prev, ...newTheme };
+      const targetThemeId = newTheme.themeId || (newTheme.backgroundId ? getThemeById(newTheme.backgroundId).id : prev.themeId);
+      const themeDef = getThemeById(targetThemeId);
+      const nextMode = newTheme.mode || prev.mode;
+      const updated: ThemeConfig = {
+        ...prev,
+        ...newTheme,
+        themeId: themeDef.id,
+        mode: nextMode,
+        accentColor: themeDef.primary,
+        accentName: themeDef.name,
+        primary: themeDef.primary,
+        secondary: themeDef.secondary,
+        gradientStart: themeDef.gradientStart,
+        gradientEnd: themeDef.gradientEnd,
+        glow: themeDef.glow,
+        backgroundId: themeDef.id
+      };
       localStorage.setItem('edupulse_theme', JSON.stringify(updated));
       return updated;
     });
   };
 
+  // Dynamically apply theme to document root and body with centralized CSS properties
+  useEffect(() => {
+    const root = document.documentElement;
+    const themeDef = getThemeById(theme.themeId);
+    const isLight = theme.mode === 'light';
+
+    // Set data-theme on <html> root element
+    root.setAttribute('data-theme', themeDef.id);
+
+    if (isLight) {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+      root.classList.add('dark');
+    }
+
+    const bg = isLight ? themeDef.light.background : themeDef.background;
+    const sidebar = isLight ? themeDef.light.sidebar : themeDef.sidebar;
+    const card = isLight ? themeDef.light.card : themeDef.card;
+    const cardSub = isLight ? themeDef.light.cardSub : themeDef.cardSub;
+    const cardHover = isLight ? themeDef.light.cardHover : themeDef.cardHover;
+    const border = isLight ? themeDef.light.border : themeDef.border;
+    const textPrimary = isLight ? themeDef.light.textPrimary : themeDef.textPrimary;
+    const textSecondary = isLight ? themeDef.light.textSecondary : themeDef.textSecondary;
+    const button = isLight ? themeDef.light.button : themeDef.button;
+    const buttonHover = isLight ? themeDef.light.buttonHover : themeDef.buttonHover;
+    const inputBg = isLight ? themeDef.light.inputBackground : themeDef.inputBackground;
+    const glow = isLight ? themeDef.light.glow : themeDef.glow;
+
+    // Centralized theme variables (Section 5 requirements)
+    root.style.setProperty('--color-primary', themeDef.primary);
+    root.style.setProperty('--color-secondary', themeDef.secondary);
+    root.style.setProperty('--color-background', bg);
+    root.style.setProperty('--color-sidebar', sidebar);
+    root.style.setProperty('--color-card', card);
+    root.style.setProperty('--color-card-sub', cardSub);
+    root.style.setProperty('--color-card-hover', cardHover);
+    root.style.setProperty('--color-border', border);
+    root.style.setProperty('--color-text-primary', textPrimary);
+    root.style.setProperty('--color-text-secondary', textSecondary);
+    root.style.setProperty('--color-gradient-start', themeDef.gradientStart);
+    root.style.setProperty('--color-gradient-end', themeDef.gradientEnd);
+    root.style.setProperty('--color-glow', glow);
+    root.style.setProperty('--color-button', button);
+    root.style.setProperty('--color-button-hover', buttonHover);
+    root.style.setProperty('--color-input-background', inputBg);
+
+    // Sync legacy/component variables
+    root.style.setProperty('--ep-bg-body', bg);
+    root.style.setProperty('--ep-bg-card', card);
+    root.style.setProperty('--ep-bg-card-sub', cardSub);
+    root.style.setProperty('--ep-bg-header', sidebar);
+    root.style.setProperty('--ep-bg-sidebar', sidebar);
+    root.style.setProperty('--ep-border', border);
+    root.style.setProperty('--ep-text-primary', textPrimary);
+    root.style.setProperty('--ep-text-secondary', textSecondary);
+    root.style.setProperty('--ep-accent-color', themeDef.primary);
+    root.style.setProperty('--ep-accent-secondary', themeDef.secondary);
+    root.style.setProperty('--ep-accent-gradient', `linear-gradient(135deg, ${themeDef.gradientStart}, ${themeDef.gradientEnd})`);
+    root.style.setProperty('--ep-glow', glow);
+
+    document.body.style.backgroundColor = bg;
+    document.body.style.color = textPrimary;
+  }, [theme]);
+
   // UI Modals
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
-  const [pdfModalDoc, setPdfModalDoc] = useState<{ title: string; category?: string; content?: string } | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [pdfModalDoc, setPdfModalDoc] = useState<{ title: string; category?: string; content?: string; pdfUrl?: string; fileName?: string } | null>(null);
 
   // Student State
   const [studentCourses] = useState<StudentCourseRecord[]>(INITIAL_STUDENT_COURSES);
@@ -804,8 +1171,116 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [coCurricular, setCoCurricular] = useState<CoCurricularActivity[]>(INITIAL_CO_CURRICULAR);
   const [routine] = useState<ClassRoutineItem[]>(INITIAL_ROUTINE);
 
+  // Syllabus Tracker & Exams (Sections 2 & 7)
+  const [syllabusChapters, setSyllabusChapters] = useState<SyllabusChapter[]>(INITIAL_SYLLABUS_CHAPTERS);
+  const [upcomingExams, setUpcomingExams] = useState<UpcomingExamItem[]>(INITIAL_UPCOMING_EXAMINATIONS);
+
+  const updateTopicStatus = (
+    chapterId: string,
+    topicId: string,
+    status: SyllabusTopicStatus,
+    teachingNotes?: string,
+    completedDate?: string
+  ) => {
+    setSyllabusChapters(prev =>
+      prev.map(ch => {
+        if (ch.id !== chapterId) return ch;
+        return {
+          ...ch,
+          topics: ch.topics.map(t =>
+            t.id === topicId
+              ? {
+                  ...t,
+                  status,
+                  teachingNotes: teachingNotes !== undefined ? teachingNotes : t.teachingNotes,
+                  completedDate: status === 'COMPLETED' ? (completedDate || new Date().toISOString().split('T')[0]) : undefined
+                }
+              : t
+          )
+        };
+      })
+    );
+  };
+
+  const addSyllabusChapter = (
+    chapter: Omit<SyllabusChapter, 'id' | 'topics'> & { topics?: Omit<SyllabusTopic, 'id'>[] }
+  ) => {
+    const newChap: SyllabusChapter = {
+      ...chapter,
+      id: `ch-${Date.now()}`,
+      topics: (chapter.topics || []).map((t, idx) => ({
+        ...t,
+        id: `tp-${Date.now()}-${idx}`
+      }))
+    };
+    setSyllabusChapters(prev => [...prev, newChap]);
+  };
+
+  const addSyllabusTopic = (chapterId: string, topic: Omit<SyllabusTopic, 'id'>) => {
+    const newTopic: SyllabusTopic = {
+      ...topic,
+      id: `tp-${Date.now()}`
+    };
+    setSyllabusChapters(prev =>
+      prev.map(ch =>
+        ch.id === chapterId ? { ...ch, topics: [...ch.topics, newTopic] } : ch
+      )
+    );
+  };
+
+  const addUpcomingExam = (exam: Omit<UpcomingExamItem, 'id'>) => {
+    const newExam: UpcomingExamItem = {
+      ...exam,
+      id: `exam-${Date.now()}`
+    };
+    setUpcomingExams(prev => [...prev, newExam]);
+  };
+
+  const updateUpcomingExam = (examId: string, updates: Partial<UpcomingExamItem>) => {
+    setUpcomingExams(prev =>
+      prev.map(ex => (ex.id === examId ? { ...ex, ...updates } : ex))
+    );
+  };
+
+  const extendAssignmentDeadline = (assignmentId: string, newDueDate: string, reason: string) => {
+    setAssignments(prev =>
+      prev.map(a => {
+        if (a.id !== assignmentId) return a;
+        const history = a.extensionHistory || [];
+        const original = a.originalDueDate || a.dueDate;
+        return {
+          ...a,
+          dueDate: newDueDate,
+          originalDueDate: original,
+          isExtended: true,
+          extensionReason: reason,
+          status: a.status === 'OVERDUE' ? 'PENDING' : a.status,
+          extensionHistory: [
+            ...history,
+            {
+              date: new Date().toISOString().split('T')[0],
+              previousDueDate: a.dueDate,
+              newDueDate,
+              reason,
+              extendedBy: currentUser.name
+            }
+          ]
+        };
+      })
+    );
+  };
+
   // Student Actions
-  const submitAssignment = (assignmentId: string, fileName: string) => {
+  const submitAssignment = (assignmentId: string, fileName: string, pdfDataUrl?: string) => {
+    const target = assignments.find(a => a.id === assignmentId);
+    if (!target) return;
+    
+    // Strict Deadline Validation:
+    const deadlineTime = new Date(`${target.dueDate}T23:59:59`).getTime();
+    if (Date.now() > deadlineTime) {
+      return;
+    }
+
     setAssignments(prev =>
       prev.map(a =>
         a.id === assignmentId
@@ -813,7 +1288,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...a,
               status: 'SUBMITTED',
               submissionDate: new Date().toISOString().split('T')[0],
-              submittedFileName: fileName
+              submittedFileName: fileName,
+              submittedPdfData: pdfDataUrl,
+              submittedStudentName: currentUser.name || 'Fathin Anzum Sadman',
+              submittedStudentId: currentUser.studentId || '241-115-211'
             }
           : a
       )
@@ -839,31 +1317,94 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCoCurricular(prev => [newItem, ...prev]);
   };
 
-  const recordQrAttendance = (courseCode: string, token: string) => {
-    if (!token || token.trim().length < 4) {
-      return { success: false, message: 'Invalid or expired QR Attendance token.' };
-    }
-    const targetCourse = studentCourses.find(c => c.courseCode.toLowerCase() === courseCode.toLowerCase()) || studentCourses[0];
-    const newLog: AttendanceRecord = {
-      id: `att-${Date.now()}`,
-      courseCode: targetCourse.courseCode,
-      courseTitle: targetCourse.courseTitle,
-      date: new Date().toISOString().split('T')[0],
-      timeSlot: 'Current Session',
-      room: 'Academic Block 3 - Room 402',
-      status: 'PRESENT',
-      verifiedVia: 'DYNAMIC_QR',
-      tokenUsed: token
-    };
-    setAttendanceLogs(prev => [newLog, ...prev]);
-    return { success: true, message: `Successfully verified attendance for ${targetCourse.courseCode} via Dynamic QR!` };
-  };
-
   // Week 5 Teacher State & Actions
   const [teacherRoster, setTeacherRoster] = useState<StudentRosterItem[]>(INITIAL_TEACHER_STUDENTS);
   const [assessmentRecords, setAssessmentRecords] = useState<AssessmentRecord[]>(INITIAL_ASSESSMENT_RECORDS);
   const [highRiskAlerts, setHighRiskAlerts] = useState<HighRiskAlert[]>(INITIAL_HIGH_RISK_ALERTS);
   const [qrSession, setQrSession] = useState<QrAttendanceSession | null>(null);
+
+  // Dynamic QR Attendance Verification (Section 3: Strict Rules)
+  const recordQrAttendance = (courseCode: string, token: string): { success: boolean; message: string } => {
+    // 1. Must have an active teacher session
+    if (!qrSession || !qrSession.isActive) {
+      return { success: false, message: 'QR Code Expired' };
+    }
+
+    // 2. Strict 5-minute expiration check (300 seconds)
+    const elapsedSeconds = (Date.now() - (qrSession.createdTimestamp || 0)) / 1000;
+    if (elapsedSeconds > (qrSession.expiresInSeconds || 300)) {
+      return { success: false, message: 'QR Code Expired' };
+    }
+
+    // 3. Token authenticity and format check
+    const cleanToken = token.trim();
+    if (!cleanToken || (!cleanToken.includes('EDUPULSE:SESSION') && cleanToken !== qrSession.qrPayload && !cleanToken.includes(qrSession.sessionId))) {
+      return { success: false, message: 'Invalid QR Code' };
+    }
+
+    // 4. Scanned QR must belong to the selected course
+    if (qrSession.courseCode.trim().toLowerCase() !== courseCode.trim().toLowerCase()) {
+      return { success: false, message: 'Invalid QR Code' };
+    }
+
+    // 5. Student must be enrolled in this course
+    const isEnrolled = studentCourses.some(
+      c => c.courseCode.trim().toLowerCase() === courseCode.trim().toLowerCase()
+    );
+    if (!isEnrolled) {
+      return { success: false, message: 'You are not enrolled in this course' };
+    }
+
+    // 6. Prevent duplicate attendance (submit once per session)
+    const alreadySubmitted = attendanceLogs.some(
+      log => log.sessionId === qrSession.sessionId && log.studentId === currentUser.studentId
+    );
+    if (alreadySubmitted) {
+      return { success: false, message: 'Attendance Already Submitted' };
+    }
+
+    const matchedCourse = studentCourses.find(
+      c => c.courseCode.trim().toLowerCase() === courseCode.trim().toLowerCase()
+    )!;
+
+    const newLog: AttendanceRecord = {
+      id: `att-${Date.now()}`,
+      sessionId: qrSession.sessionId,
+      studentId: currentUser.studentId || '241-115-211',
+      studentName: currentUser.name,
+      teacherId: qrSession.teacherId || 'FAC-CSE-042',
+      courseId: matchedCourse.courseId,
+      courseCode: matchedCourse.courseCode,
+      courseTitle: matchedCourse.courseTitle,
+      date: new Date().toISOString().split('T')[0],
+      timeSlot: qrSession.startTime,
+      room: qrSession.room || 'Academic Block 3 - Room 402',
+      status: 'PRESENT',
+      verifiedVia: 'DYNAMIC_QR',
+      tokenUsed: cleanToken,
+      timestamp: new Date().toISOString()
+    };
+
+    setAttendanceLogs(prev => [newLog, ...prev]);
+
+    // Real-time teacher roster update
+    setTeacherRoster(prev =>
+      prev.map(s =>
+        s.studentId === (currentUser.studentId || '241-115-211')
+          ? {
+              ...s,
+              attendanceStatus: 'PRESENT',
+              checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          : s
+      )
+    );
+
+    // Update checkedInCount in session
+    setQrSession(prev => (prev ? { ...prev, checkedInCount: (prev.checkedInCount || 0) + 1 } : null));
+
+    return { success: true, message: 'Attendance Successfully Recorded' };
+  };
 
   const updateStudentAttendanceStatus = (studentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => {
     setTeacherRoster(prev =>
@@ -871,20 +1412,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const startQrSession = (courseCode: string, section: string, durationSeconds = 60) => {
+  // Exactly 5 minutes (300 seconds) default QR session
+  const startQrSession = (courseCode: string, section: string, durationSeconds = 300) => {
+    const sessionId = `ses-${Date.now()}`;
     const token = `EP-${courseCode.replace(/\s+/g, '')}-${Date.now().toString().slice(-4)}`;
     setQrSession({
-      sessionId: `ses-${Date.now()}`,
+      sessionId,
       courseCode,
-      courseTitle: 'Database Management Systems',
+      courseTitle: courseCode === 'CSE 311' ? 'Database Management Systems' : courseCode === 'CSE 313' ? 'Compiler Design' : 'Course Session',
       section,
       date: new Date().toISOString().split('T')[0],
       startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       expiresInSeconds: durationSeconds,
-      qrPayload: `EDUPULSE:SESSION:${token}:CSE:2026`,
+      createdTimestamp: Date.now(),
+      qrPayload: `EDUPULSE:SESSION:${sessionId}:${token}:CSE:2026`,
       totalEnrolled: teacherRoster.length,
       checkedInCount: teacherRoster.filter(s => s.attendanceStatus === 'PRESENT').length,
-      isActive: true
+      isActive: true,
+      teacherId: currentUser.employeeId || 'FAC-CSE-042',
+      teacherName: currentUser.name,
+      room: 'Academic Block 3 - Room 402'
     });
   };
 
@@ -897,7 +1444,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(rec => {
         if (rec.studentId !== studentId) return rec;
         const updated = { ...rec, [field]: value };
-        const total = (updated.quiz1 || 0) + (updated.quiz2 || 0) + (updated.midterm || 0) + (updated.assignment || 0) + (updated.finalExam || 0);
+
+        // SRS FR-TEA-14: Best 2 of 3 CT Calculation
+        const ctScores = [updated.quiz1 || 0, updated.quiz2 || 0, updated.quiz3 !== undefined ? updated.quiz3 : (updated.quiz2 || 0)];
+        ctScores.sort((a, b) => b - a);
+        const bestTwoCtAverage = Math.round(((ctScores[0] + ctScores[1]) / 2) * 10) / 10;
+
+        // Total 100 = Best 2 of 3 CT (20) + Midterm (30) + Assignment (10) + Final (40)
+        const total = Math.min(100, Math.round(bestTwoCtAverage + (updated.midterm || 0) + (updated.assignment || 0) + (updated.finalExam || 0)));
+
         let letterGrade = 'F';
         let gpa = 0.0;
         if (total >= 80) { letterGrade = 'A+'; gpa = 4.0; }
@@ -909,14 +1464,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         else if (total >= 50) { letterGrade = 'C+'; gpa = 2.50; }
         else if (total >= 45) { letterGrade = 'C'; gpa = 2.25; }
         else if (total >= 40) { letterGrade = 'D'; gpa = 2.00; }
+
         return {
           ...updated,
+          bestTwoCtAverage,
           total,
           letterGrade,
           gpa
         };
       })
     );
+  };
+
+  // SRS FR-TEA-17: Notify Student & Assigned Academic Advisor
+  const sendAdvisorWarningNotification = (studentId: string, courseCode: string, note?: string) => {
+    setAssessmentRecords(prev =>
+      prev.map(r => r.studentId === studentId ? { ...r, advisorNotified: true } : r)
+    );
+    // Also log in high-risk alert history
+    setHighRiskAlerts(prev => {
+      const existing = prev.find(h => h.studentId === studentId);
+      if (existing) {
+        return prev.map(h => h.studentId === studentId ? {
+          ...h,
+          status: 'INTERVENTION_SENT',
+          interventionHistory: [
+            ...h.interventionHistory,
+            {
+              date: new Date().toISOString().split('T')[0],
+              action: 'Official Academic Warning Dispatched',
+              note: note || `Debarment alert & low performance notice sent to student and Departmental Advisor.`,
+              by: currentUser.name
+            }
+          ]
+        } : h);
+      }
+      return [
+        {
+          id: `hra-${Date.now()}`,
+          studentId,
+          studentName: assessmentRecords.find(a => a.studentId === studentId)?.studentName || 'Student',
+          courseCode: courseCode || 'CSE 311',
+          attendanceRate: 64,
+          marksScore: assessmentRecords.find(a => a.studentId === studentId)?.total || 45,
+          riskFactor: note || 'Academic performance warning triggered by Course Teacher.',
+          status: 'INTERVENTION_SENT',
+          interventionHistory: [
+            {
+              date: new Date().toISOString().split('T')[0],
+              action: 'Early Warning Dispatched',
+              note: note || 'Dispatched warning notification to student and Departmental Advisor.',
+              by: currentUser.name
+            }
+          ]
+        },
+        ...prev
+      ];
+    });
   };
 
   const bulkImportAssessments = (records: AssessmentRecord[]) => {
@@ -1109,6 +1713,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         switchRole,
         isAuthenticated,
+        authStatus,
         pendingApprovalUser,
         clearPendingApproval,
         approveUser,
@@ -1118,6 +1723,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         loginWithGoogle,
         registerAccount,
+        resetUserPassword,
         logout,
         registeredUsers,
         activeTab,
@@ -1146,6 +1752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         stopQrSession,
         assessmentRecords,
         updateAssessmentRecord,
+        sendAdvisorWarningNotification,
         bulkImportAssessments,
         createAssignment,
         gradeAssignment,
@@ -1154,6 +1761,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         verifyResultSubmission,
         highRiskAlerts,
         updateHighRiskStatus,
+        syllabusChapters,
+        updateTopicStatus,
+        addSyllabusChapter,
+        addSyllabusTopic,
+        upcomingExams,
+        addUpcomingExam,
+        updateUpcomingExam,
+        extendAssignmentDeadline,
         departments,
         addDepartment,
         bulkAddDepartments,
@@ -1188,6 +1803,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsThemeModalOpen,
         isSwitchAccountModalOpen,
         setIsSwitchAccountModalOpen,
+        isMobileNavOpen,
+        setIsMobileNavOpen,
         pdfModalDoc,
         setPdfModalDoc
       }}

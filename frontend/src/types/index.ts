@@ -12,6 +12,7 @@ export interface UserProfile {
   status?: AccountStatus;
   avatarUrl?: string;
   authProvider?: 'GOOGLE' | 'EMAIL';
+  isEmailVerified?: boolean;
   googleId?: string;
   department: string;
   departmentName: string;
@@ -95,6 +96,11 @@ export interface StudentCourseRecord {
 
 export interface AttendanceRecord {
   id: string;
+  sessionId?: string;
+  studentId?: string;
+  studentName?: string;
+  teacherId?: string;
+  courseId?: string;
   courseCode: string;
   courseTitle: string;
   date: string;
@@ -103,6 +109,7 @@ export interface AttendanceRecord {
   status: 'PRESENT' | 'ABSENT' | 'LATE';
   verifiedVia: 'DYNAMIC_QR' | 'MANUAL_ROSTER' | 'BIOMETRIC';
   tokenUsed?: string;
+  timestamp?: string;
 }
 
 export interface AssignmentItem {
@@ -113,6 +120,9 @@ export interface AssignmentItem {
   description: string;
   assignedDate: string;
   dueDate: string;
+  originalDueDate?: string;
+  isExtended?: boolean;
+  extensionReason?: string;
   totalPoints: number;
   status: 'PENDING' | 'SUBMITTED' | 'GRADED' | 'OVERDUE';
   submissionDate?: string;
@@ -120,6 +130,18 @@ export interface AssignmentItem {
   obtainedScore?: number;
   facultyFeedback?: string;
   attachments?: string[];
+  attachmentPdfName?: string;
+  attachmentPdfData?: string;
+  submittedPdfData?: string;
+  submittedStudentName?: string;
+  submittedStudentId?: string;
+  extensionHistory?: {
+    date: string;
+    previousDueDate: string;
+    newDueDate: string;
+    reason: string;
+    extendedBy: string;
+  }[];
 }
 
 export interface NoticeItem {
@@ -201,10 +223,14 @@ export interface QrAttendanceSession {
   date: string;
   startTime: string;
   expiresInSeconds: number;
+  createdTimestamp?: number;
   qrPayload: string;
   totalEnrolled: number;
   checkedInCount: number;
   isActive: boolean;
+  teacherId?: string;
+  teacherName?: string;
+  room?: string;
 }
 
 export interface StudentRosterItem {
@@ -216,20 +242,25 @@ export interface StudentRosterItem {
   currentMarks: number;
   riskLevel: RiskLevel;
   attendanceStatus: 'PRESENT' | 'ABSENT' | 'LATE';
+  checkInTime?: string;
 }
 
 export interface AssessmentRecord {
   studentId: string;
   studentName: string;
   rollNumber: string;
-  quiz1: number;
-  quiz2: number;
-  midterm: number;
-  assignment: number;
-  finalExam: number;
+  quiz1: number; // CT 1 (Max 20)
+  quiz2: number; // CT 2 (Max 20)
+  quiz3?: number; // CT 3 (Max 20, Best 2 of 3)
+  bestTwoCtAverage?: number;
+  midterm: number; // Midterm (Max 30)
+  assignment: number; // Assignment (Max 10)
+  attendanceMarks?: number; // Attendance Marks derived from Attendance_Logs (Max 10)
+  finalExam: number; // Semester Final (Max 40)
   total: number;
   letterGrade: string;
   gpa: number;
+  advisorNotified?: boolean;
 }
 
 export interface HighRiskAlert {
@@ -312,4 +343,48 @@ export interface CourseAllocationItem {
   day: string;
   timeSlot: string;
   room: string;
+}
+
+// Syllabus Tracker Types
+export type SyllabusTopicStatus = 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED';
+
+export interface SyllabusTopic {
+  id: string;
+  title: string;
+  estimatedHours: number;
+  status: SyllabusTopicStatus;
+  teachingNotes?: string;
+  completionDate?: string;
+  completedDate?: string;
+}
+
+export interface SyllabusChapter {
+  id: string;
+  courseCode: string;
+  courseTitle?: string;
+  chapterNumber: number;
+  chapterTitle?: string;
+  title?: string;
+  description?: string;
+  topics: SyllabusTopic[];
+}
+
+// Upcoming Examinations Types
+export type ExamType = 'MIDTERM' | 'FINAL' | 'CLASS_TEST' | 'QUIZ' | 'LAB_EXAM' | 'PRESENTATION';
+
+export interface UpcomingExamItem {
+  id: string;
+  title: string;
+  courseCode: string;
+  courseTitle: string;
+  type: ExamType;
+  date: string; // YYYY-MM-DD
+  startTime: string; // e.g. "10:00 AM"
+  durationMinutes: number; // e.g. 90
+  room: string;
+  instructorName: string;
+  instructions: string;
+  totalMarks: number;
+  section: string;
+  status: 'SCHEDULED' | 'RUNNING' | 'COMPLETED' | 'CANCELLED';
 }

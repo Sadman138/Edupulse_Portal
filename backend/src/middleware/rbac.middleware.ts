@@ -19,17 +19,24 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ): void => {
+  let token: string | undefined;
+
   const authHeader = req.headers['authorization'];
-  if (!authHeader) {
+  if (authHeader) {
+    token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+  } else if ((req as any).cookies && (req as any).cookies.edupulse_token) {
+    token = (req as any).cookies.edupulse_token;
+  }
+
+  if (!token) {
     res.status(401).json({
       success: false,
-      error: 'Unauthorized: Missing Authorization header. Provide a valid Bearer token.',
-      code: 'AUTH_HEADER_MISSING'
+      error: 'Unauthorized: Missing authentication token. Please sign in.',
+      code: 'AUTH_TOKEN_MISSING'
     });
     return;
   }
 
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
   const result = verifyAccessToken(token);
 
   if (!result.valid || !result.payload) {

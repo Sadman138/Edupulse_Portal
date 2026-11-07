@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 
 export const StudentPreviousResults: React.FC = () => {
-  const { previousResults, submitPreviousResult, currentUser } = useApp();
+  const { previousResults, submitPreviousResult, currentUser, theme } = useApp();
+  const isLight = theme.mode === 'light';
   const [showModal, setShowModal] = useState(false);
   const [semesterName, setSemesterName] = useState('4th Semester (Fall 2025)');
   const [completedCredits, setCompletedCredits] = useState('18.0');
@@ -44,59 +45,95 @@ export const StudentPreviousResults: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
             Previous Semester Results & Retake Submissions
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>
             Submit backlog/retake GPA certificates for faculty verification and institutional CGPA updates
           </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all w-fit"
+          style={{ backgroundColor: theme.accentColor }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-bold text-xs shadow-lg transition-all w-fit cursor-pointer hover:brightness-110 active:scale-95"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-white" />
           <span>Submit Result Claim</span>
         </button>
       </div>
 
       {successNotice && (
-        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-3 text-xs animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className={`p-4 rounded-2xl border flex items-center gap-3 text-xs animate-in fade-in ${
+          isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+        }`}>
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
             <span className="font-bold">Submission Dispatched to Faculty Verification Desk!</span>
-            <p className="text-[11px] text-emerald-200">Your course advisor (Dr. Tariqul Islam) will inspect the grade slip in their verification queue.</p>
+            <p className="text-[11px] mt-0.5 opacity-90">Your course advisor (Dr. Tariqul Islam) will inspect the grade slip in their verification queue.</p>
           </div>
         </div>
       )}
 
       {/* Historical GPA Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase">Cumulative CGPA</p>
-          <p className="text-2xl font-black text-white">{currentUser.cgpa || 3.42} <span className="text-xs font-normal text-slate-400">/ 4.00</span></p>
-          <p className="text-[10px] text-indigo-400">Verified by Academic Registrar</p>
+        <div
+          style={{
+            backgroundColor: 'var(--ep-bg-card, #111827)',
+            borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+          }}
+          className="p-4 rounded-2xl border space-y-1 shadow-sm"
+        >
+          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>Cumulative CGPA</p>
+          <p className="text-2xl font-black" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
+            {currentUser.cgpa || 3.42} <span className="text-xs font-normal" style={{ color: 'var(--ep-text-secondary)' }}>/ 4.00</span>
+          </p>
+          <p className="text-[10px] text-indigo-500 font-bold">Verified by Academic Registrar</p>
         </div>
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase">Total Credits Earned</p>
-          <p className="text-2xl font-black text-emerald-400">62.5 Cr</p>
-          <p className="text-[10px] text-slate-500">Degree Requirement: 148.0 Cr</p>
+        <div
+          style={{
+            backgroundColor: 'var(--ep-bg-card, #111827)',
+            borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+          }}
+          className="p-4 rounded-2xl border space-y-1 shadow-sm"
+        >
+          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>Total Credits Earned</p>
+          <p className="text-2xl font-black text-emerald-500">62.5 Cr</p>
+          <p className="text-[10px]" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>Degree Requirement: 148.0 Cr</p>
         </div>
-        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-          <p className="text-xs text-slate-400 font-semibold uppercase">Pending Claims</p>
-          <p className="text-2xl font-black text-amber-400">
+        <div
+          style={{
+            backgroundColor: 'var(--ep-bg-card, #111827)',
+            borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+          }}
+          className="p-4 rounded-2xl border space-y-1 shadow-sm"
+        >
+          <p className="text-xs font-semibold uppercase" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>Pending Claims</p>
+          <p className="text-2xl font-black text-amber-500">
             {previousResults.filter(p => p.status === 'PENDING').length}
           </p>
-          <p className="text-[10px] text-slate-500">Awaiting faculty signature</p>
+          <p className="text-[10px]" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>Awaiting faculty signature</p>
         </div>
       </div>
 
       {/* Result Submissions Table */}
-      <div className="rounded-2xl border border-slate-800 bg-[#111827] overflow-hidden shadow-xl">
+      <div
+        style={{
+          backgroundColor: 'var(--ep-bg-card, #111827)',
+          borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+        }}
+        className="rounded-2xl border overflow-hidden shadow-md"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <thead
+              style={{
+                backgroundColor: isLight ? '#f8fafc' : 'rgba(15, 23, 42, 0.8)',
+                color: isLight ? '#334155' : '#94a3b8',
+                borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+              }}
+              className="uppercase tracking-wider font-extrabold border-b"
+            >
               <tr>
                 <th className="px-5 py-3.5">Semester & Category</th>
                 <th className="px-5 py-3.5">Credits</th>
@@ -106,32 +143,44 @@ export const StudentPreviousResults: React.FC = () => {
                 <th className="px-5 py-3.5 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+            <tbody
+              style={{ borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))' }}
+              className="divide-y"
+            >
               {previousResults.map(res => (
-                <tr key={res.id} className="hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={res.id}
+                  className={`transition-colors ${
+                    isLight ? 'hover:bg-slate-100/70' : 'hover:bg-slate-800/40'
+                  }`}
+                >
                   <td className="px-5 py-4">
-                    <p className="font-bold text-white text-sm">{res.semesterName}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 mt-1 inline-block">
+                    <p className="font-bold text-sm" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
+                      {res.semesterName}
+                    </p>
+                    <span className={`text-[10px] px-2 py-0.5 rounded border mt-1 inline-block ${
+                      isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}>
                       {res.type} Submission
                     </span>
                   </td>
-                  <td className="px-5 py-4 font-mono font-bold text-slate-200">
+                  <td className="px-5 py-4 font-mono font-bold" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
                     {res.completedCredits} Cr
                   </td>
-                  <td className="px-5 py-4 font-mono font-extrabold text-sm text-emerald-400">
+                  <td className="px-5 py-4 font-mono font-extrabold text-sm text-emerald-500">
                     {res.gpa.toFixed(2)}
                   </td>
-                  <td className="px-5 py-4 text-slate-400 font-mono text-[11px]">
+                  <td className="px-5 py-4 font-mono text-[11px]" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>
                     {res.documentName}
                   </td>
                   <td className="px-5 py-4">
                     {res.verifiedBy ? (
                       <div>
-                        <p className="font-semibold text-slate-200 text-xs">{res.verifiedBy}</p>
-                        <p className="text-[10px] text-slate-500">{res.verificationDate}</p>
+                        <p className="font-semibold text-xs" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>{res.verifiedBy}</p>
+                        <p className="text-[10px]" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>{res.verificationDate}</p>
                       </div>
                     ) : (
-                      <span className="text-[11px] text-amber-400 italic">Pending Advisor Approval</span>
+                      <span className="text-[11px] text-amber-500 font-bold italic">Pending Advisor Approval</span>
                     )}
                   </td>
                   <td className="px-5 py-4 text-right">
@@ -146,40 +195,52 @@ export const StudentPreviousResults: React.FC = () => {
 
       {/* Submission Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="font-bold text-white text-base">Submit Previous Semester Result</h3>
-            <p className="text-xs text-slate-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div
+            style={{
+              backgroundColor: 'var(--ep-bg-card, #111827)',
+              borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+            }}
+            className="border rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+          >
+            <h3 className="font-extrabold text-base" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
+              Submit Previous Semester Result
+            </h3>
+            <p className="text-xs" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>
               Upload retake or backlog grade sheet for verification by Academic Coordinator Dr. Tariqul Islam.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Semester Name & Session</label>
+                <label className={`text-xs font-semibold block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Semester Name & Session</label>
                 <input
                   type="text"
                   value={semesterName}
                   onChange={e => setSemesterName(e.target.value)}
                   required
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                  }`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Earned Credits</label>
+                  <label className={`text-xs font-semibold block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Earned Credits</label>
                   <input
                     type="number"
                     step="0.5"
                     value={completedCredits}
                     onChange={e => setCompletedCredits(e.target.value)}
                     required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Semester SGPA</label>
+                  <label className={`text-xs font-semibold block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Semester SGPA</label>
                   <input
                     type="number"
                     step="0.01"
@@ -188,17 +249,21 @@ export const StudentPreviousResults: React.FC = () => {
                     value={gpa}
                     onChange={e => setGpa(e.target.value)}
                     required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Submission Category</label>
+                <label className={`text-xs font-semibold block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Submission Category</label>
                 <select
                   value={type}
                   onChange={e => setType(e.target.value as any)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                  }`}
                 >
                   <option value="Regular">Regular Semester</option>
                   <option value="Retake">Retake Course</option>
@@ -208,13 +273,15 @@ export const StudentPreviousResults: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Attached Grade Sheet PDF Name</label>
+                <label className={`text-xs font-semibold block mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Attached Grade Sheet PDF Name</label>
                 <input
                   type="text"
                   value={documentName}
                   onChange={e => setDocumentName(e.target.value)}
                   required
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
+                  }`}
                 />
               </div>
 
@@ -222,13 +289,16 @@ export const StudentPreviousResults: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer ${
+                    isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+                  style={{ backgroundColor: theme.accentColor }}
+                  className="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-md cursor-pointer hover:brightness-110 active:scale-95"
                 >
                   Submit for Approval
                 </button>

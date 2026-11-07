@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 
 export const StudentNotices: React.FC = () => {
-  const { notices, setPdfModalDoc } = useApp();
+  const { notices, setPdfModalDoc, theme } = useApp();
+  const isLight = theme.mode === 'light';
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,10 +30,10 @@ export const StudentNotices: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
             Institutional Notice Board
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>
             University circulars, examination schedules, and department bulletins
           </p>
         </div>
@@ -45,7 +46,11 @@ export const StudentNotices: React.FC = () => {
             placeholder="Search circulars..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+              isLight
+                ? 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                : 'bg-slate-900 border-slate-700 text-white placeholder-slate-500'
+            }`}
           />
         </div>
       </div>
@@ -56,11 +61,14 @@ export const StudentNotices: React.FC = () => {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               selectedCategory === cat
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'text-white shadow-md font-bold'
+                : isLight
+                ? 'bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200'
                 : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
             }`}
+            style={selectedCategory === cat ? { backgroundColor: theme.accentColor } : {}}
           >
             {cat === 'ALL' ? 'All Notices' : `${cat} Notices`}
           </button>
@@ -72,15 +80,23 @@ export const StudentNotices: React.FC = () => {
         {filtered.map(notice => (
           <div
             key={notice.id}
-            className={`rounded-2xl border p-5 transition-all bg-[#111827] space-y-3 shadow-lg ${
+            style={{
+              backgroundColor: 'var(--ep-bg-card, #111827)',
+              borderColor: 'var(--ep-border, rgba(51, 65, 85, 0.7))'
+            }}
+            className={`rounded-2xl border p-5 transition-all space-y-3 shadow-md ${
               notice.priority === 'URGENT'
-                ? 'border-rose-500/40 ring-1 ring-rose-500/20'
-                : 'border-slate-800 hover:border-slate-700'
+                ? 'ring-2 ring-rose-500/30'
+                : ''
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                  isLight
+                    ? 'bg-slate-100 text-slate-700 border-slate-300'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}>
                   {notice.category}
                 </span>
                 {notice.priority === 'URGENT' && (
@@ -89,7 +105,7 @@ export const StudentNotices: React.FC = () => {
                   </span>
                 )}
                 {notice.priority === 'IMPORTANT' && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
                     IMPORTANT
                   </span>
                 )}
@@ -101,17 +117,19 @@ export const StudentNotices: React.FC = () => {
               </div>
             </div>
 
-            <h3 className="font-extrabold text-white text-base">
+            <h3 className="font-extrabold text-base" style={{ color: 'var(--ep-text-primary, #ffffff)' }}>
               {notice.title}
             </h3>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--ep-text-secondary, #94a3b8)' }}>
               {notice.content}
             </p>
 
-            <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+            <div className={`pt-3 border-t flex flex-wrap items-center justify-between gap-3 text-xs ${
+              isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800 text-slate-400'
+            }`}>
               <span>
-                Issued by: <strong className="text-slate-200">{notice.authorName}</strong> ({notice.authorRole})
+                Issued by: <strong style={{ color: 'var(--ep-text-primary, #ffffff)' }}>{notice.authorName}</strong> ({notice.authorRole})
               </span>
 
               <button
@@ -122,7 +140,11 @@ export const StudentNotices: React.FC = () => {
                     content: `OFFICIAL UNIVERSITY NOTICE\nPublished Date: ${notice.date}\nCategory: ${notice.category}\nIssued By: ${notice.authorName} (${notice.authorRole})\nAudience: ${notice.targetAudience}\n\nNotice Statement:\n${notice.content}\n\nAll concerned students and faculty members are requested to take necessary compliance measures.`
                   })
                 }
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                }`}
               >
                 <FileText className="w-3.5 h-3.5 text-indigo-400" />
                 <span>View Full PDF Circular</span>

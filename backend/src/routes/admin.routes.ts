@@ -8,6 +8,7 @@ import {
   getPendingUsersHandler,
   approveUserHandler,
   rejectUserHandler,
+  deleteUserHandler,
   getRbacMatrixHandler,
   getSystemHealthHandler
 } from '../controllers/admin.controller';
@@ -25,6 +26,7 @@ router.use(authorizeRoles('ADMIN'));
 router.get('/users/pending', requirePermission('ADMIN_USER_APPROVAL_MANAGE'), getPendingUsersHandler);
 router.patch('/users/:id/approve', requirePermission('ADMIN_USER_APPROVAL_MANAGE'), approveUserHandler);
 router.patch('/users/:id/reject', requirePermission('ADMIN_USER_APPROVAL_MANAGE'), rejectUserHandler);
+router.delete('/users/:id', requirePermission('ADMIN_USER_APPROVAL_MANAGE'), deleteUserHandler);
 
 // Admin RBAC & Audit Endpoints
 router.get('/rbac/matrix', requirePermission('SECURITY_RBAC_INSPECT'), getRbacMatrixHandler);
